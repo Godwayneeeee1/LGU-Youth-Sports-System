@@ -1,0 +1,1426 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Report | LGU Youth & Sports</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260420-sports-report">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .page-body {
+            max-width: min(96vw, 1460px);
+        }
+        .sports-report-shell {
+            display: grid;
+            gap: 18px;
+        }
+        .sports-report-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid rgba(35,81,166,.16);
+            background:
+                radial-gradient(circle at top right, rgba(16,185,129,.18), transparent 28%),
+                radial-gradient(circle at bottom left, rgba(59,130,246,.12), transparent 32%),
+                linear-gradient(135deg, #f8fbff 0%, #ffffff 58%, #effaf6 100%);
+            box-shadow: 0 20px 44px rgba(15,37,88,.08);
+        }
+        .sports-report-hero::after {
+            content: "";
+            position: absolute;
+            right: -28px;
+            bottom: -36px;
+            width: 180px;
+            height: 180px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(59,130,246,.08), rgba(59,130,246,0) 68%);
+            pointer-events: none;
+        }
+        .sports-report-kicker {
+            margin-bottom: 6px;
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--text-light);
+        }
+        .sports-report-title {
+            margin: 0;
+            font-size: clamp(1.8rem, 2.4vw, 2.45rem);
+        }
+        .sports-report-copy {
+            max-width: 760px;
+            margin: 10px 0 0;
+            color: var(--text-muted);
+            font-size: .92rem;
+            line-height: 1.65;
+        }
+        .sports-report-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .sports-report-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.86);
+            border: 1px solid rgba(35,81,166,.14);
+            color: var(--navy);
+            font-size: .78rem;
+            font-weight: 800;
+            box-shadow: 0 8px 18px rgba(15,37,88,.05);
+        }
+        .sports-report-chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--sky);
+            flex-shrink: 0;
+        }
+        .sports-report-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .sports-report-stat {
+            min-height: 112px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(35,81,166,.12);
+            background: rgba(255,255,255,.92);
+            box-shadow: 0 16px 30px rgba(15,37,88,.05);
+        }
+        .sports-report-stat-label {
+            font-size: .68rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #93a4c5;
+        }
+        .sports-report-stat-value {
+            margin-top: 8px;
+            color: var(--navy);
+            font-size: 1.75rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .sports-report-stat-value.text {
+            font-size: 1.65rem;
+        }
+        .sports-report-stat-note {
+            margin-top: 8px;
+            color: var(--text-muted);
+            font-size: .78rem;
+            line-height: 1.45;
+        }
+        .sports-report-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(320px, .95fr);
+            gap: 14px;
+            align-items: start;
+        }
+        .sports-panel {
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        .sports-panel.full-width {
+            grid-column: 1 / -1;
+        }
+        .sports-panel-head {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sports-panel-head.with-actions {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .sports-panel-title {
+            font-size: 1rem;
+            font-weight: 900;
+            color: var(--navy);
+        }
+        .sports-panel-copy {
+            margin-top: 2px;
+            color: var(--text-muted);
+            font-size: .76rem;
+            line-height: 1.45;
+        }
+        .sports-table-wrap {
+            min-height: 404px;
+        }
+        .sports-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .sports-table thead th {
+            padding: 10px 12px;
+            background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+            color: #8ea0bf;
+            font-size: .68rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+        .sports-table tbody td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            font-size: .82rem;
+            color: var(--text-base);
+        }
+        .sports-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .sports-table tbody tr:hover td {
+            background: #fbfdff;
+        }
+        .sports-report-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .sports-report-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(35,81,166,.14);
+            background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+            color: var(--navy);
+            font-size: .78rem;
+            font-weight: 800;
+            box-shadow: 0 12px 24px rgba(15,37,88,.06);
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        }
+        .sports-report-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 26px rgba(15,37,88,.1);
+            border-color: rgba(35,81,166,.22);
+        }
+        .sports-report-action-btn.primary {
+            background: linear-gradient(135deg, var(--navy-light) 0%, var(--navy) 100%);
+            border-color: rgba(15,37,88,.12);
+            color: #fff;
+            box-shadow: 0 16px 30px rgba(15,37,88,.14);
+        }
+        .sports-report-action-btn svg {
+            flex-shrink: 0;
+        }
+        .sports-rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: var(--navy-light);
+            font-size: .72rem;
+            font-weight: 900;
+        }
+        .sports-name-cell {
+            min-width: 180px;
+        }
+        .sports-name {
+            font-weight: 900;
+            color: var(--navy);
+            font-size: .86rem;
+        }
+        .sports-subcopy {
+            margin-top: 2px;
+            color: var(--text-muted);
+            font-size: .68rem;
+        }
+        .sports-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: .74rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .sports-pill.total {
+            color: var(--navy);
+            background: #eef2ff;
+        }
+        .sports-pill.male {
+            color: #2563eb;
+            background: rgba(37,99,235,.1);
+        }
+        .sports-pill.female {
+            color: #e11d48;
+            background: rgba(225,29,72,.1);
+        }
+        .sports-share-wrap {
+            min-width: 165px;
+        }
+        .sports-share-bar {
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: #e7eef9;
+            overflow: hidden;
+        }
+        .sports-share-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #10b981 0%, #2563eb 100%);
+        }
+        .sports-share-note {
+            margin-top: 6px;
+            color: var(--text-muted);
+            font-size: .7rem;
+            line-height: 1.35;
+        }
+        .sports-snapshot-body {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+        }
+        .sports-snapshot-card {
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid rgba(35,81,166,.12);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+        .sports-snapshot-title {
+            margin-bottom: 10px;
+            font-size: .8rem;
+            font-weight: 900;
+            color: var(--navy);
+        }
+        .sports-mini-list {
+            display: grid;
+            gap: 10px;
+        }
+        .sports-mini-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: start;
+        }
+        .sports-mini-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: var(--navy-light);
+            font-size: .67rem;
+            font-weight: 900;
+        }
+        .sports-mini-name {
+            font-size: .78rem;
+            font-weight: 800;
+            color: var(--navy);
+            line-height: 1.35;
+        }
+        .sports-mini-note {
+            font-size: .66rem;
+            color: var(--text-muted);
+            line-height: 1.35;
+        }
+        .sports-mini-value {
+            font-size: .76rem;
+            font-weight: 900;
+            color: var(--navy);
+            white-space: nowrap;
+        }
+        .sports-tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .sports-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(16,185,129,.18);
+            background: rgba(16,185,129,.08);
+            color: #0f766e;
+            font-size: .74rem;
+            font-weight: 800;
+        }
+        .sports-tag span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.9);
+            font-size: .66rem;
+            color: #0f766e;
+        }
+        .sports-summary-list {
+            display: grid;
+            gap: 9px;
+        }
+        .sports-summary-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: start;
+        }
+        .sports-summary-index {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: var(--navy-light);
+            font-size: .66rem;
+            font-weight: 900;
+        }
+        .sports-summary-label {
+            color: var(--navy);
+            font-size: .76rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+        .sports-summary-copy {
+            color: var(--text-muted);
+            font-size: .66rem;
+            line-height: 1.35;
+        }
+        .sports-summary-value {
+            color: var(--navy);
+            font-size: .74rem;
+            font-weight: 900;
+            text-align: right;
+        }
+        .sports-report-empty {
+            padding: 48px 24px;
+            border: 1px dashed rgba(35,81,166,.22);
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: .92rem;
+        }
+        .sports-report-empty strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--navy);
+            font-size: 1.08rem;
+        }
+        @media (max-width: 1180px) {
+            .sports-report-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .sports-report-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 767px) {
+            .sports-report-hero {
+                padding: 16px;
+            }
+            .sports-report-stat-grid {
+                grid-template-columns: 1fr;
+            }
+            .sports-panel-head.with-actions {
+                flex-direction: column;
+            }
+            .sports-report-actions {
+                width: 100%;
+            }
+            .sports-report-action-btn {
+                justify-content: center;
+                width: 100%;
+            }
+            .sports-table thead {
+                display: none;
+            }
+            .sports-table,
+            .sports-table tbody,
+            .sports-table tr,
+            .sports-table td {
+                display: block;
+                width: 100%;
+            }
+            .sports-table tbody tr {
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            .sports-table tbody td {
+                padding: 6px 0;
+                border: none;
+            }
+            .sports-mini-row,
+            .sports-summary-item {
+                grid-template-columns: auto 1fr;
+            }
+            .sports-mini-value,
+            .sports-summary-value {
+                grid-column: 2;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="app-navbar">
+    <button class="btn-navbar-menu" onclick="toggleSidebar()" aria-label="Menu">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+        Menu
+    </button>
+    <a class="navbar-brand-area" href="/sportreport/">
+        <img src="{% static 'images/logo.png' %}" alt="LGU Youth & Sports Logo">
+        <div>
+            <div class="brand-text-main">LGU Youth & Sports</div>
+            <div class="brand-text-sub">Manolo Fortich, Bukidnon</div>
+        </div>
+    </a>
+    <div class="navbar-spacer"></div>
+    <div class="navbar-user" id="user-display" style="display:none;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="account-label">Account</span>: <b id="username-span"></b>
+    </div>
+    <button id="logout-btn" class="btn-logout" onclick="logout()" style="display:none;">Logout</button>
+</nav>
+
+<div id="side-menu" aria-hidden="true">
+    <div class="side-menu-header">
+        <div class="side-menu-logo">
+            <img src="{% static 'images/logo.png' %}" alt="logo">
+            <span>LGU Youth & Sports</span>
+        </div>
+        <button class="btn-close-side" onclick="closeSidebar()" aria-label="Close">&times;</button>
+    </div>
+    <div class="side-menu-body">
+        <div class="side-menu-section">Youth Navigation</div>
+        <a href="/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </a>
+        <a href="/reports/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Reports
+        </a>
+        <a href="/heatmap/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 3v18"></path><path d="M15 3v18"></path></svg>
+            Heatmap
+        </a>
+        <a href="/talentsport/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3l2.7 5.47 6.03.88-4.36 4.25 1.03 6-5.4-2.84-5.4 2.84 1.03-6-4.36-4.25 6.03-.88z"/></svg>
+            Talent/Sports Map
+        </a>
+        <a href="/account/" class="menu-item system-admin-only" style="display:none;" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Barangay Active Account
+        </a>
+        <div class="side-menu-cta">
+            <div class="side-menu-cta-title">Sports Navigation</div>
+            <a href="/sportdashboard/" class="side-menu-switch" onclick="closeSidebar();">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="8" r="5"/><path d="M13 13l7 7"/><path d="M14.5 5.5h2.5v2.5"/><path d="M3 17c1.5-1 3-1.5 5-1.5"/></svg>
+                Switch to Sports Dashboard
+            </a>
+            <a href="/sportreport/" class="side-menu-switch active" onclick="closeSidebar();">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+                Open Sports Report
+            </a>
+            <div class="side-menu-switch-note">Dashboard overview and scoped sports reporting for admin and barangay users.</div>
+        </div>
+    </div>
+</div>
+<div id="side-overlay" class="side-overlay" onclick="closeSidebar()" aria-hidden="true"></div>
+
+<div class="page-body">
+    <div class="page-header">
+        <div>
+            <h1 class="page-header-title">Sports Report</h1>
+            <p class="page-header-sub" id="sports-page-sub">Preparing the latest sports participation summary for your current access scope.</p>
+        </div>
+    </div>
+
+    <div class="sports-report-shell">
+        <section class="sports-report-hero">
+            <div class="sports-report-kicker">Sports Summary</div>
+            <h2 class="sports-report-title" id="sports-report-title">Loading sports report...</h2>
+            <p class="sports-report-copy" id="sports-report-copy">Pulling the youth sports records available to your account.</p>
+            <div class="sports-report-chip-row" id="sports-report-chips"></div>
+            <div class="sports-report-stat-grid" id="sports-report-stats"></div>
+        </section>
+
+        <div id="sports-report-empty" class="sports-report-empty" style="display:none;"></div>
+
+        <div id="sports-report-content" class="sports-report-layout">
+            <section class="sports-panel">
+                <div class="sports-panel-head">
+                    <div class="sports-panel-title" id="sports-table-title">Most Preferred Sports</div>
+                    <div class="sports-panel-copy" id="sports-table-copy">Ranked from the current youth records with male and female breakdowns.</div>
+                </div>
+                <div class="sports-table-wrap">
+                    <table class="sports-table">
+                        <thead>
+                            <tr>
+                                <th style="width:54px;">#</th>
+                                <th style="text-align:left;">Sport</th>
+                                <th>Total</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th style="text-align:left;">Share</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sports-table-body">
+                            <tr>
+                                <td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);">Loading sports records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <aside class="sports-panel">
+                <div class="sports-panel-head">
+                    <div class="sports-panel-title">Sports Snapshot</div>
+                    <div class="sports-panel-copy" id="sports-snapshot-copy">Where the strongest sports participation is showing up right now.</div>
+                </div>
+                <div class="sports-snapshot-body" id="sports-snapshot-body">
+                    <div class="sports-snapshot-card" style="color:var(--text-muted);font-size:.84rem;">Loading sports snapshot...</div>
+                </div>
+            </aside>
+
+            <section class="sports-panel full-width">
+                <div class="sports-panel-head with-actions">
+                    <div>
+                        <div class="sports-panel-title" id="sports-competition-title">Youth With Sports Competition Levels</div>
+                        <div class="sports-panel-copy" id="sports-competition-copy">Names of youth who have already played at different competition levels.</div>
+                    </div>
+                    <div class="sports-report-actions">
+                        <button type="button" class="sports-report-action-btn" onclick="printCompetitionLevelsReport()">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                            Print List
+                        </button>
+                        <button type="button" class="sports-report-action-btn primary" onclick="downloadCompetitionLevelsPdf()">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                            Download PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="sports-table-wrap">
+                    <table class="sports-table">
+                        <thead id="sports-competition-head"></thead>
+                        <tbody id="sports-competition-body">
+                            <tr>
+                                <td colspan="5" style="padding:24px;text-align:center;color:var(--text-muted);">Loading competition level records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script>
+    const sportsReportState = {
+        currentUser: null,
+        barangays: [],
+        youths: [],
+        report: null
+    };
+
+    function toggleSidebar() {
+        const menu = document.getElementById('side-menu');
+        const overlay = document.getElementById('side-overlay');
+        menu?.classList.toggle('open');
+        overlay?.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        document.getElementById('side-menu')?.classList.remove('open');
+        document.getElementById('side-overlay')?.classList.remove('show');
+    }
+
+    function logout() {
+        fetch('/api/logout/').then(() => window.location.href = '/login/');
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeSidebar();
+    });
+
+    function normalizeText(value) {
+        return String(value || '').trim();
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function toNumber(value) {
+        return Number(value || 0);
+    }
+
+    function getSexKey(youth) {
+        const sex = normalizeText(youth?.sex || youth?.full_data?.sex).toLowerCase();
+        if (sex === 'male') return 'male';
+        if (sex === 'female') return 'female';
+        return 'unknown';
+    }
+
+    function getSportsSelections(youth) {
+        const selections = youth?.full_data?.sports_preferences;
+        return Array.isArray(selections) ? selections.filter(Boolean).map(item => normalizeText(item)).filter(Boolean) : [];
+    }
+
+    function getSportsOther(youth) {
+        return normalizeText(youth?.full_data?.sports_preference_other);
+    }
+
+    function getCompetitionLevels(youth) {
+        const levels = youth?.full_data?.sports_competition_levels;
+        return Array.isArray(levels) ? levels.filter(Boolean).map(item => normalizeText(item)).filter(Boolean) : [];
+    }
+
+    function safePercent(value, total) {
+        if (!total) return '0.0%';
+        return `${((toNumber(value) / toNumber(total)) * 100).toFixed(1)}%`;
+    }
+
+    function formatScopeLabel() {
+        if (sportsReportState.currentUser?.is_admin) {
+            return 'All Barangays';
+        }
+        return sportsReportState.currentUser?.barangay_name || sportsReportState.barangays[0]?.name || 'Assigned Barangay';
+    }
+
+    function buildSportsReport() {
+        const barangayMap = new Map(
+            sportsReportState.barangays.map(barangay => [Number(barangay.id), {
+                id: Number(barangay.id),
+                name: barangay.name,
+                totalYouth: 0,
+                interested: 0,
+                selections: 0,
+                customCount: 0,
+                maleInterested: 0,
+                femaleInterested: 0
+            }])
+        );
+
+        const sportMap = new Map();
+        const customCounter = new Map();
+        const competitionProfiles = [];
+        let totalInterested = 0;
+        let totalSelections = 0;
+        let maleInterested = 0;
+        let femaleInterested = 0;
+
+        sportsReportState.youths.forEach(youth => {
+            const barangayId = Number(youth?.barangay_id || youth?.full_data?.barangay_id || 0);
+            const barangayName = normalizeText(youth?.barangay_name || youth?.full_data?.barangay_name);
+            if (!barangayMap.has(barangayId) && barangayId) {
+                barangayMap.set(barangayId, {
+                    id: barangayId,
+                    name: barangayName || 'Barangay',
+                    totalYouth: 0,
+                    interested: 0,
+                    selections: 0,
+                    customCount: 0,
+                    maleInterested: 0,
+                    femaleInterested: 0
+                });
+            }
+
+            const barangayStats = barangayMap.get(barangayId);
+            if (barangayStats) barangayStats.totalYouth += 1;
+
+            const sexKey = getSexKey(youth);
+            const sportsSelections = getSportsSelections(youth);
+            const otherSport = getSportsOther(youth);
+            const competitionLevels = getCompetitionLevels(youth);
+            const hasInterest = sportsSelections.length > 0 || !!otherSport || competitionLevels.length > 0;
+
+            if (hasInterest) {
+                totalInterested += 1;
+                if (sexKey === 'male') maleInterested += 1;
+                if (sexKey === 'female') femaleInterested += 1;
+                if (barangayStats) {
+                    barangayStats.interested += 1;
+                    if (sexKey === 'male') barangayStats.maleInterested += 1;
+                    if (sexKey === 'female') barangayStats.femaleInterested += 1;
+                }
+            }
+
+            sportsSelections.forEach(label => {
+                if (!sportMap.has(label)) {
+                    sportMap.set(label, { label, total: 0, male: 0, female: 0 });
+                }
+                const sportStats = sportMap.get(label);
+                sportStats.total += 1;
+                if (sexKey === 'male') sportStats.male += 1;
+                if (sexKey === 'female') sportStats.female += 1;
+                totalSelections += 1;
+                if (barangayStats) barangayStats.selections += 1;
+            });
+
+            if (otherSport) {
+                customCounter.set(otherSport, toNumber(customCounter.get(otherSport)) + 1);
+                totalSelections += 1;
+                if (barangayStats) {
+                    barangayStats.selections += 1;
+                    barangayStats.customCount += 1;
+                }
+            }
+
+            if (competitionLevels.length) {
+                const sportsLabels = [...sportsSelections];
+                if (otherSport) sportsLabels.push(`Other: ${otherSport}`);
+                competitionProfiles.push({
+                    name: normalizeText(youth?.name) || 'Unnamed youth',
+                    barangay: barangayStats?.name || barangayName || 'Barangay',
+                    sports: sportsLabels.length ? sportsLabels.join(', ') : 'No sport listed',
+                    levels: competitionLevels.join(', '),
+                    levelCount: competitionLevels.length
+                });
+            }
+        });
+
+        const sports = Array.from(sportMap.values()).sort((a, b) => {
+            if (b.total !== a.total) return b.total - a.total;
+            return a.label.localeCompare(b.label);
+        });
+
+        const barangays = Array.from(barangayMap.values()).sort((a, b) => {
+            if (b.interested !== a.interested) return b.interested - a.interested;
+            if (b.selections !== a.selections) return b.selections - a.selections;
+            return a.name.localeCompare(b.name);
+        });
+
+        const customEntries = Array.from(customCounter.entries())
+            .map(([label, count]) => ({ label, count }))
+            .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+        competitionProfiles.sort((a, b) => {
+            if (a.barangay !== b.barangay) return a.barangay.localeCompare(b.barangay);
+            return a.name.localeCompare(b.name);
+        });
+
+        const topSport = sports[0] || null;
+        const leader = barangays[0] || null;
+        const topMalePick = sports.reduce((best, item) => item.male > (best?.male || 0) ? item : best, null);
+        const topFemalePick = sports.reduce((best, item) => item.female > (best?.female || 0) ? item : best, null);
+        const totalYouthRecords = sportsReportState.youths.length;
+
+        return {
+            scopeLabel: formatScopeLabel(),
+            isAdmin: !!sportsReportState.currentUser?.is_admin,
+            totalYouthRecords,
+            totalInterested,
+            totalSelections,
+            officialSelections: sports.reduce((sum, item) => sum + item.total, 0),
+            uniqueSports: sports.length,
+            customEntries,
+            competitionProfiles,
+            sports,
+            barangays,
+            leader,
+            topSport,
+            topMalePick,
+            topFemalePick,
+            maleInterested,
+            femaleInterested
+        };
+    }
+
+    function renderHero() {
+        const report = sportsReportState.report;
+        const isAdmin = report.isAdmin;
+        const title = document.getElementById('sports-report-title');
+        const copy = document.getElementById('sports-report-copy');
+        const chips = document.getElementById('sports-report-chips');
+        const stats = document.getElementById('sports-report-stats');
+        const sub = document.getElementById('sports-page-sub');
+        const coverageCount = sportsReportState.barangays.length;
+
+        if (title) {
+            title.textContent = isAdmin
+                ? `Sports Dashboard Across ${coverageCount} Barangays`
+                : `Sports Dashboard for ${report.scopeLabel}`;
+        }
+
+        if (copy) {
+            copy.textContent = isAdmin
+                ? 'A sports-focused view of youth interest across all accessible barangays, highlighting the sports with the strongest demand and the barangays with the highest participation.'
+                : `A sports-focused view of youth interest recorded inside ${report.scopeLabel}, highlighting the sports with the strongest local participation and the current coverage of your barangay folder.`;
+        }
+
+        if (sub) {
+            sub.textContent = isAdmin
+                ? 'Sports reporting across all accessible barangays with sport rankings and barangay leaders'
+                : `Sports reporting for ${report.scopeLabel} with a barangay-only summary and sport rankings`;
+        }
+
+        if (chips) {
+            chips.innerHTML = [
+                `Scope: ${report.scopeLabel}`,
+                isAdmin ? `Barangay Coverage: ${coverageCount} barangays` : 'Barangay Coverage: Assigned barangay only',
+                `Youth Records: ${report.totalYouthRecords}`
+            ].map(label => `
+                <span class="sports-report-chip">
+                    <span class="sports-report-chip-dot"></span>
+                    ${escapeHtml(label)}
+                </span>
+            `).join('');
+        }
+
+        const leaderNote = report.leader
+            ? `${report.leader.interested} youth records in this barangay include sports interest.`
+            : 'No barangay has saved sports interest yet.';
+        const activeShare = safePercent(report.totalInterested, report.totalYouthRecords);
+
+        const statCards = isAdmin ? [
+            {
+                label: 'Youth With Sports Interest',
+                value: report.totalInterested,
+                note: `${activeShare} of youth records include at least one sports preference.`
+            },
+            {
+                label: 'Total Sports Selections',
+                value: report.totalSelections,
+                note: `${report.uniqueSports} official sports, ${report.customEntries.length} custom sports, and ${report.competitionProfiles.length} youth profiles with competition levels are currently recorded.`
+            },
+            {
+                label: 'Top Sport Overall',
+                value: report.topSport ? report.topSport.label : 'No Data',
+                text: true,
+                note: report.topSport ? `Male: ${report.topSport.male} | Female: ${report.topSport.female} | Total selections: ${report.topSport.total}` : 'Waiting for sports records.'
+            },
+            {
+                label: 'Barangay Leader',
+                value: report.leader ? report.leader.name : 'No Data',
+                text: true,
+                note: leaderNote
+            }
+        ] : [
+            {
+                label: 'Youth With Sports Interest',
+                value: report.totalInterested,
+                note: `${activeShare} of youth records in ${report.scopeLabel} include at least one sports preference.`
+            },
+            {
+                label: 'Total Sports Selections',
+                value: report.totalSelections,
+                note: `${report.uniqueSports} official sports, ${report.customEntries.length} custom sports, and ${report.competitionProfiles.length} youth profiles with competition levels are currently recorded in this barangay.`
+            },
+            {
+                label: 'Top Sport In Barangay',
+                value: report.topSport ? report.topSport.label : 'No Data',
+                text: true,
+                note: report.topSport ? `Male: ${report.topSport.male} | Female: ${report.topSport.female} | Total selections: ${report.topSport.total}` : 'Waiting for sports records.'
+            },
+            {
+                label: 'Coverage Rate',
+                value: activeShare,
+                text: true,
+                note: `${report.maleInterested} male and ${report.femaleInterested} female youth records currently carry sports interest.`
+            }
+        ];
+
+        if (stats) {
+            stats.innerHTML = statCards.map(card => `
+                <div class="sports-report-stat">
+                    <div class="sports-report-stat-label">${escapeHtml(card.label)}</div>
+                    <div class="sports-report-stat-value ${card.text ? 'text' : ''}">${escapeHtml(card.value)}</div>
+                    <div class="sports-report-stat-note">${escapeHtml(card.note)}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function renderSportsTable() {
+        const report = sportsReportState.report;
+        const body = document.getElementById('sports-table-body');
+        const title = document.getElementById('sports-table-title');
+        const copy = document.getElementById('sports-table-copy');
+        if (!body) return;
+
+        if (title) {
+            title.textContent = report.isAdmin ? 'Most Preferred Sports' : `Most Preferred Sports in ${report.scopeLabel}`;
+        }
+        if (copy) {
+            copy.textContent = report.isAdmin
+                ? 'Ranked from the current youth records with male and female breakdowns.'
+                : `Ranked from the youth records saved inside ${report.scopeLabel}, with male and female breakdowns.`;
+        }
+
+        if (!report.sports.length) {
+            body.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);">
+                        No official sports selections have been saved yet for this scope.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        body.innerHTML = report.sports.map((sport, index) => `
+            <tr>
+                <td><span class="sports-rank-badge">${index + 1}</span></td>
+                <td class="sports-name-cell">
+                    <div class="sports-name">${escapeHtml(sport.label)}</div>
+                    <div class="sports-subcopy">${sport.total} saved selection${sport.total === 1 ? '' : 's'}</div>
+                </td>
+                <td><span class="sports-pill total">${sport.total}</span></td>
+                <td><span class="sports-pill male">${sport.male}</span></td>
+                <td><span class="sports-pill female">${sport.female}</span></td>
+                <td class="sports-share-wrap">
+                    <div class="sports-share-bar">
+                        <div class="sports-share-fill" style="width:${report.officialSelections ? ((sport.total / report.officialSelections) * 100).toFixed(1) : 0}%;"></div>
+                    </div>
+                    <div class="sports-share-note">${safePercent(sport.total, report.officialSelections)} of official sports selections</div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function buildAdminSnapshot(report) {
+        const topBarangays = report.barangays.filter(item => item.interested > 0).slice(0, 3);
+        const topBarangayMarkup = topBarangays.length ? topBarangays.map((item, index) => `
+            <div class="sports-mini-row">
+                <span class="sports-mini-rank">${index + 1}</span>
+                <div>
+                    <div class="sports-mini-name">${escapeHtml(item.name)}</div>
+                    <div class="sports-mini-note">${item.interested} youth with at least one sports preference saved.</div>
+                </div>
+                <div class="sports-mini-value">${item.selections}</div>
+            </div>
+        `).join('') : '<div class="sports-mini-note">No barangays have sports records yet.</div>';
+
+        const customMarkup = report.customEntries.length ? report.customEntries.slice(0, 6).map(item => `
+            <span class="sports-tag">${escapeHtml(item.label)}<span>${item.count}</span></span>
+        `).join('') : '<div class="sports-mini-note">No custom sports entries have been saved yet.</div>';
+
+        const summaryItems = [
+            {
+                label: 'Accessible Barangays',
+                copy: 'Counting how many barangays are visible in this account scope.',
+                value: sportsReportState.barangays.length
+            },
+            {
+                label: 'Unique Sports Recorded',
+                copy: 'Counting distinct official sports picked by the current scope.',
+                value: report.uniqueSports
+            },
+            {
+                label: 'Highest Male Pick',
+                copy: report.topMalePick ? `${report.topMalePick.male} male selections, ${report.topMalePick.total} total selections.` : 'No male sports selections recorded yet.',
+                value: report.topMalePick ? report.topMalePick.label : 'No Data'
+            },
+            {
+                label: 'Highest Female Pick',
+                copy: report.topFemalePick ? `${report.topFemalePick.female} female selections, ${report.topFemalePick.total} total selections.` : 'No female sports selections recorded yet.',
+                value: report.topFemalePick ? report.topFemalePick.label : 'No Data'
+            }
+        ];
+
+        return `
+            <div class="sports-snapshot-card">
+                <div class="sports-snapshot-title">Top Barangays</div>
+                <div class="sports-mini-list">${topBarangayMarkup}</div>
+            </div>
+            <div class="sports-snapshot-card">
+                <div class="sports-snapshot-title">Custom Sports Entries</div>
+                <div class="sports-tag-row">${customMarkup}</div>
+            </div>
+            <div class="sports-snapshot-card">
+                <div class="sports-snapshot-title">Coverage Summary</div>
+                <div class="sports-summary-list">
+                    ${summaryItems.map((item, index) => `
+                        <div class="sports-summary-item">
+                            <span class="sports-summary-index">${index + 1}</span>
+                            <div>
+                                <div class="sports-summary-label">${escapeHtml(item.label)}</div>
+                                <div class="sports-summary-copy">${escapeHtml(item.copy)}</div>
+                            </div>
+                            <div class="sports-summary-value">${escapeHtml(item.value)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function buildBarangaySnapshot(report) {
+        const topSportsMarkup = report.sports.length ? report.sports.slice(0, 3).map((item, index) => `
+            <div class="sports-mini-row">
+                <span class="sports-mini-rank">${index + 1}</span>
+                <div>
+                    <div class="sports-mini-name">${escapeHtml(item.label)}</div>
+                    <div class="sports-mini-note">${item.male} male and ${item.female} female selections saved in this barangay.</div>
+                </div>
+                <div class="sports-mini-value">${item.total}</div>
+            </div>
+        `).join('') : '<div class="sports-mini-note">No sports records are available yet for this barangay.</div>';
+
+        const customMarkup = report.customEntries.length ? report.customEntries.slice(0, 6).map(item => `
+            <span class="sports-tag">${escapeHtml(item.label)}<span>${item.count}</span></span>
+        `).join('') : '<div class="sports-mini-note">No custom sports entries have been saved yet.</div>';
+
+        const summaryItems = [
+            {
+                label: 'Assigned Barangay',
+                copy: 'This account only sees the sports records attached to its own barangay.',
+                value: report.scopeLabel
+            },
+            {
+                label: 'Youth Records In Scope',
+                copy: 'All youth profiles currently visible to this barangay account.',
+                value: report.totalYouthRecords
+            },
+            {
+                label: 'Male Sports Interest',
+                copy: 'Male youth records with at least one official or custom sports entry.',
+                value: report.maleInterested
+            },
+            {
+                label: 'Female Sports Interest',
+                copy: 'Female youth records with at least one official or custom sports entry.',
+                value: report.femaleInterested
+            }
+        ];
+
+        return `
+            <div class="sports-snapshot-card">
+                <div class="sports-snapshot-title">Top Sports In ${escapeHtml(report.scopeLabel)}</div>
+                <div class="sports-mini-list">${topSportsMarkup}</div>
+            </div>
+            <div class="sports-snapshot-card">
+                <div class="sports-snapshot-title">Custom Sports Entries</div>
+                <div class="sports-tag-row">${customMarkup}</div>
+            </div>
+            <div class="sports-snapshot-card">
+                <div class="sports-snapshot-title">Barangay Coverage Summary</div>
+                <div class="sports-summary-list">
+                    ${summaryItems.map((item, index) => `
+                        <div class="sports-summary-item">
+                            <span class="sports-summary-index">${index + 1}</span>
+                            <div>
+                                <div class="sports-summary-label">${escapeHtml(item.label)}</div>
+                                <div class="sports-summary-copy">${escapeHtml(item.copy)}</div>
+                            </div>
+                            <div class="sports-summary-value">${escapeHtml(item.value)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSnapshot() {
+        const report = sportsReportState.report;
+        const body = document.getElementById('sports-snapshot-body');
+        const copy = document.getElementById('sports-snapshot-copy');
+        if (!body) return;
+        if (copy) {
+            copy.textContent = report.isAdmin
+                ? 'Where the strongest sports participation is showing up right now.'
+                : `A barangay-only view of the sports activity currently saved for ${report.scopeLabel}.`;
+        }
+        body.innerHTML = report.isAdmin ? buildAdminSnapshot(report) : buildBarangaySnapshot(report);
+    }
+
+    function renderCompetitionLevelsSection() {
+        const report = sportsReportState.report;
+        const title = document.getElementById('sports-competition-title');
+        const copy = document.getElementById('sports-competition-copy');
+        const head = document.getElementById('sports-competition-head');
+        const body = document.getElementById('sports-competition-body');
+        if (!head || !body) return;
+
+        if (title) {
+            title.textContent = report.isAdmin
+                ? 'Youth With Sports Competition Levels'
+                : `Youth With Sports Competition Levels in ${report.scopeLabel}`;
+        }
+        if (copy) {
+            copy.textContent = report.isAdmin
+                ? 'Names of youth who have already played at different competition levels across the accessible barangays.'
+                : `Names of youth from ${report.scopeLabel} who already have saved competition-level sports experience.`;
+        }
+
+        head.innerHTML = `
+            <tr>
+                <th style="width:54px;">#</th>
+                <th style="text-align:left;">Youth Name</th>
+                ${report.isAdmin ? '<th style="text-align:left;">Barangay</th>' : ''}
+                <th style="text-align:left;">Sports</th>
+                <th style="text-align:left;">Competition Levels</th>
+            </tr>
+        `;
+
+        if (!report.competitionProfiles.length) {
+            body.innerHTML = `
+                <tr>
+                    <td colspan="${report.isAdmin ? 5 : 4}" style="padding:24px;text-align:center;color:var(--text-muted);">
+                        No youth record with sports competition levels has been saved yet for this scope.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        body.innerHTML = report.competitionProfiles.map((row, index) => `
+            <tr>
+                <td><span class="sports-rank-badge">${index + 1}</span></td>
+                <td class="sports-name-cell">
+                    <div class="sports-name">${escapeHtml(row.name)}</div>
+                    <div class="sports-subcopy">${row.levelCount} competition level${row.levelCount === 1 ? '' : 's'} saved</div>
+                </td>
+                ${report.isAdmin ? `<td><div class="sports-name">${escapeHtml(row.barangay)}</div></td>` : ''}
+                <td style="text-align:left;">${escapeHtml(row.sports)}</td>
+                <td style="text-align:left;">${escapeHtml(row.levels)}</td>
+            </tr>
+        `).join('');
+    }
+
+    function buildCompetitionPrintMarkup() {
+        const report = sportsReportState.report;
+        const rows = report.competitionProfiles;
+        const generatedOn = new Date().toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Sports Competition Levels Report</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 28px; color: #1e293b; }
+                    h1 { margin: 0 0 6px; font-size: 24px; color: #0f2558; }
+                    p { margin: 0 0 14px; color: #475569; font-size: 14px; }
+                    .meta { margin-bottom: 18px; font-size: 13px; color: #64748b; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 12px; vertical-align: top; text-align: left; }
+                    th { background: #eff6ff; color: #1e3a8a; }
+                </style>
+            </head>
+            <body>
+                <h1>Youth With Sports Competition Levels</h1>
+                <p>Scope: ${escapeHtml(report.scopeLabel)}</p>
+                <div class="meta">Generated on ${escapeHtml(generatedOn)}</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Youth Name</th>
+                            ${report.isAdmin ? '<th>Barangay</th>' : ''}
+                            <th>Sports</th>
+                            <th>Competition Levels</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.length ? rows.map((row, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${escapeHtml(row.name)}</td>
+                                ${report.isAdmin ? `<td>${escapeHtml(row.barangay)}</td>` : ''}
+                                <td>${escapeHtml(row.sports)}</td>
+                                <td>${escapeHtml(row.levels)}</td>
+                            </tr>
+                        `).join('') : `
+                            <tr>
+                                <td colspan="${report.isAdmin ? 5 : 4}">No youth record with sports competition levels has been saved yet for this scope.</td>
+                            </tr>
+                        `}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+    }
+
+    function printCompetitionLevelsReport() {
+        const existingFrame = document.getElementById('sports-competition-print-frame');
+        if (existingFrame) existingFrame.remove();
+
+        const frame = document.createElement('iframe');
+        frame.id = 'sports-competition-print-frame';
+        frame.style.position = 'fixed';
+        frame.style.right = '0';
+        frame.style.bottom = '0';
+        frame.style.width = '0';
+        frame.style.height = '0';
+        frame.style.border = '0';
+        frame.style.opacity = '0';
+        frame.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(frame);
+
+        const frameWindow = frame.contentWindow;
+        if (!frameWindow) {
+            frame.remove();
+            return;
+        }
+
+        const cleanup = () => {
+            window.setTimeout(() => {
+                frame.remove();
+            }, 300);
+        };
+
+        frame.onload = () => {
+            window.setTimeout(() => {
+                frameWindow.focus();
+                frameWindow.print();
+            }, 250);
+        };
+
+        frameWindow.onafterprint = cleanup;
+        frameWindow.document.open();
+        frameWindow.document.write(buildCompetitionPrintMarkup());
+        frameWindow.document.close();
+    }
+
+    function downloadCompetitionLevelsPdf() {
+        window.location.href = '/api/sports-report/competition-levels-pdf/';
+    }
+
+    function renderEmptyState() {
+        const empty = document.getElementById('sports-report-empty');
+        const content = document.getElementById('sports-report-content');
+        if (!empty || !content) return;
+
+        if (!sportsReportState.report.totalInterested) {
+            empty.style.display = 'block';
+            empty.innerHTML = `
+                <strong>No sports interest has been recorded yet.</strong>
+                The page is ready, but this scope still has no saved sports selections or custom sports entries to summarize.
+            `;
+            content.style.display = 'none';
+            return;
+        }
+
+        empty.style.display = 'none';
+        empty.innerHTML = '';
+        content.style.display = 'grid';
+    }
+
+    function renderSportsReport() {
+        sportsReportState.report = buildSportsReport();
+        renderHero();
+        renderEmptyState();
+        renderSportsTable();
+        renderSnapshot();
+        renderCompetitionLevelsSection();
+    }
+
+    async function initializeProtectedNav() {
+        try {
+            const response = await fetch('/api/user/');
+            const data = response.ok ? await response.json() : null;
+            if (!data || !data.is_authenticated) {
+                window.location.href = '/login/';
+                return false;
+            }
+
+            const userDisplay = document.getElementById('user-display');
+            const usernameSpan = document.getElementById('username-span');
+            const accountLabel = document.getElementById('account-label');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if (userDisplay) userDisplay.style.display = 'block';
+            if (usernameSpan) {
+                usernameSpan.innerText = data.barangay_name && !data.is_admin
+                    ? `${data.username} (${data.barangay_name})`
+                    : data.username;
+            }
+            if (accountLabel) accountLabel.innerText = data.is_admin ? 'Admin' : 'Account';
+            if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+            document.querySelectorAll('.system-admin-only').forEach(el => {
+                el.style.display = data.is_admin ? '' : 'none';
+            });
+
+            sportsReportState.currentUser = data;
+            return true;
+        } catch (error) {
+            console.warn('Could not verify current user:', error);
+            window.location.href = '/login/';
+            return false;
+        }
+    }
+
+    async function initSportsReport() {
+        try {
+            const [barangayResponse, youthResponse] = await Promise.all([
+                fetch('/api/barangays/', { cache: 'no-store' }),
+                fetch('/api/youth/', { cache: 'no-store' })
+            ]);
+
+            if (!barangayResponse.ok || !youthResponse.ok) {
+                throw new Error('Failed to load sports report data');
+            }
+
+            sportsReportState.barangays = await barangayResponse.json();
+            sportsReportState.youths = await youthResponse.json();
+            renderSportsReport();
+        } catch (error) {
+            console.warn('Could not load sports report data:', error);
+            const empty = document.getElementById('sports-report-empty');
+            const content = document.getElementById('sports-report-content');
+            const sub = document.getElementById('sports-page-sub');
+            const title = document.getElementById('sports-report-title');
+            const copy = document.getElementById('sports-report-copy');
+            if (sub) sub.textContent = 'The sports report could not load right now. Please refresh and try again.';
+            if (title) title.textContent = 'Sports report unavailable';
+            if (copy) copy.textContent = 'The current account could not load the sports analytics needed for this page.';
+            if (empty) {
+                empty.style.display = 'block';
+                empty.innerHTML = `
+                    <strong>Could not load sports report data.</strong>
+                    Please refresh the page and try again.
+                `;
+            }
+            if (content) content.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const ready = await initializeProtectedNav();
+        if (!ready) return;
+        initSportsReport();
+    });
+</script>
+
+</body>
+</html>

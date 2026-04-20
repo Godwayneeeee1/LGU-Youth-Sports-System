@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | LYDO Youth Profiling</title>
+    <title>Dashboard | LGU Youth & Sports</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260420-sports-dashboard-nav">
     <style>
         .navbar .badge-text, .navbar img[alt="youth"] { display: none !important; }
     </style>
@@ -23,9 +23,9 @@
     </button>
 
     <a class="navbar-brand-area" href="#" onclick="showDashboard()">
-        <img src="{% static 'images/logo.png' %}" id="dashboard-logo" alt="LYDO Logo">
+        <img src="{% static 'images/logo.png' %}" id="dashboard-logo" alt="LGU Youth & Sports Logo">
         <div>
-            <div class="brand-text-main">LYDO Youth Profiling</div>
+            <div class="brand-text-main">LGU Youth & Sports</div>
             <div class="brand-text-sub">Manolo Fortich, Bukidnon</div>
         </div>
     </a>
@@ -44,12 +44,12 @@
     <div class="side-menu-header">
         <div class="side-menu-logo">
             <img src="{% static 'images/logo.png' %}" alt="logo">
-            <span>LYDO</span>
+            <span>LGU Youth & Sports</span>
         </div>
         <button class="btn-close-side" onclick="closeSidebar()" aria-label="Close">&times;</button>
     </div>
     <div class="side-menu-body">
-        <div class="side-menu-section">Navigation</div>
+        <div class="side-menu-section">Youth Navigation</div>
         <a href="#" class="menu-item active" onclick="showDashboard(); closeSidebar();">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Dashboard
@@ -70,6 +70,18 @@
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Barangay Active Account
         </a>
+        <div class="side-menu-cta">
+            <div class="side-menu-cta-title">Sports Navigation</div>
+            <a href="/sportdashboard/" class="side-menu-switch" onclick="closeSidebar();">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="8" r="5"/><path d="M13 13l7 7"/><path d="M14.5 5.5h2.5v2.5"/><path d="M3 17c1.5-1 3-1.5 5-1.5"/></svg>
+                Switch to Sports Dashboard
+            </a>
+            <a href="/sportreport/" class="side-menu-switch" onclick="closeSidebar();">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+                Open Sports Report
+            </a>
+            <div class="side-menu-switch-note">Dashboard overview and scoped sports reporting for admin and barangay users.</div>
+        </div>
     </div>
 </div>
 <div id="side-overlay" class="side-overlay" onclick="closeSidebar()" aria-hidden="true"></div>
@@ -650,6 +662,45 @@
                 <button type="button" class="btn-secondary-lydo" id="transfer-confirm-cancel">Cancel</button>
                 <button type="button" class="btn-primary-lydo" id="transfer-confirm-approve">
                     Confirm Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border:none;border-radius:24px;overflow:hidden;box-shadow:0 30px 70px rgba(15,23,42,.24);">
+            <div class="modal-header" style="background:linear-gradient(135deg,#fff1f2 0%, #ffe4e6 100%);border:none;padding:18px 22px 10px;">
+                <h5 class="modal-title" id="delete-confirm-title" style="display:flex;align-items:center;gap:12px;color:#881337;font-weight:800;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:14px;background:rgba(190,24,93,.12);color:#be185d;">
+                        <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                    </span>
+                    Delete Youth Record
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding:10px 22px 18px;">
+                <div id="delete-confirm-message" style="font-size:1.05rem;font-weight:700;color:var(--navy);line-height:1.45;">
+                    Are you sure you want to delete this record?
+                </div>
+                <p id="delete-confirm-helper" style="margin:10px 0 16px;color:var(--text-muted);line-height:1.65;">
+                    This action permanently removes the youth profile from the selected barangay list.
+                </p>
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:linear-gradient(180deg,#fff8f8 0%, #fff 100%);border:1px solid #fecdd3;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;width:40px;height:40px;border-radius:999px;background:#ffe4e6;color:#be185d;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.72 3h16.92a2 2 0 0 0 1.72-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                    </span>
+                    <div>
+                        <div style="font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:#9f1239;font-weight:800;">Record To Delete</div>
+                        <div id="delete-confirm-name" style="margin-top:4px;font-size:1rem;font-weight:800;color:#4c0519;">Youth record</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border:none;padding:0 22px 22px;display:flex;justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn-secondary-lydo" id="delete-confirm-cancel">No! Keep it!</button>
+                <button type="button" class="btn-primary-lydo" id="delete-confirm-approve" style="background:linear-gradient(135deg,#dc2626 0%, #be123c 100%);border-color:#be123c;box-shadow:0 16px 30px rgba(190,24,93,.24);">
+                    Yes! Delete it
                 </button>
             </div>
         </div>

@@ -16,6 +16,8 @@ urlpatterns = [
     path('reports/', views.reports_page, name='reports_list'),
     path('heatmap/', views.heatmap_page, name='heatmap_page'),
     path('talentsport/', views.talent_sports_map_page, name='talent_sports_map_page'),
+    path('sportdashboard/', views.sport_dashboard_page, name='sport_dashboard_page'),
+    path('sportreport/', views.sport_report_page, name='sport_report_page'),
     path('account/', views.account_page, name='account_page'),
     path('reports/<int:bid>/', views.reports_page, name='reports_by_barangay'),
 
@@ -36,6 +38,7 @@ urlpatterns = [
     path('api/demographics/', views.demographics_api, name='demographics_api'),
     path('api/heatmap/', views.heatmap_api, name='heatmap_api'),
     path('api/talent-sports-map/', views.talent_sports_map_api, name='talent_sports_map_api'),
+    path('api/sports-report/competition-levels-pdf/', views.sports_competition_levels_pdf_api, name='sports_competition_levels_pdf_api'),
     path('api/unemployed_heatmap/', views.unemployed_heatmap_api, name='unemployed_heatmap_api'),
     path('api/forms/youth-profile/<int:bid>/', views.download_barangay_blank_form, name='download_barangay_blank_form'),
     path('api/forms/youth-profile-pack/', views.download_blank_form_pack, name='download_blank_form_pack'),

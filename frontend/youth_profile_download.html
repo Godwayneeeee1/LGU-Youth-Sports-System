@@ -288,11 +288,11 @@
 
         <div class="hero">
             <div class="hero-block">
-                <div class="eyebrow">LYDO Manual Intake Sheet</div>
+                <div class="eyebrow">LGU Youth & Sports Manual Intake Sheet</div>
                 <h1 class="title">Youth Profile Form</h1>
                 <p class="subtitle">
                     Use this blank form for manual data gathering. The completed answers can be encoded later
-                    into the LYDO Youth Profile system using the same field structure.
+                    into the LGU Youth & Sports profile system using the same field structure.
                 </p>
             </div>
             <div class="hero-block">
@@ -482,21 +482,6 @@
                 <div class="grid">
                     <div class="check-card">
                         <div class="check-group">
-                            <label>Talent / Sports Preference - Sports</label>
-                            <div class="checks cols-3">
-                                {% for option in sports_preference_options %}
-                                <label class="check-item"><input type="checkbox" name="sport_preference_{{ forloop.counter }}"> {{ option }}</label>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="field" style="margin-top: 10px;">
-                            <label>Other Sports Preference</label>
-                            <input type="text" name="sports_preference_other">
-                        </div>
-                    </div>
-
-                    <div class="check-card">
-                        <div class="check-group">
                             <label>Talent / Sports Preference - Talents</label>
                             <div class="checks cols-2">
                                 {% for option in talent_preference_options %}
@@ -508,6 +493,28 @@
                             <label>Other Talent Preference</label>
                             <input type="text" name="talent_preference_other">
                         </div>
+                    </div>
+
+                    <div class="check-card">
+                        <div class="check-group">
+                            <label>Levels of Sports Competition Played</label>
+                            <div class="checks cols-2">
+                                {% for option in sports_competition_level_options %}
+                                <label class="check-item"><input type="checkbox" name="sports_competition_level_{{ forloop.counter }}"> {{ option }}</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="field" style="margin-top: 10px;">
+                            <label>Other Sports / Competition Notes</label>
+                            <input type="text" name="sports_competition_notes">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="check-card" style="margin-top: 12px;">
+                    <div class="textarea-block">
+                        <label>Sports Preference(s) / Write chosen sport(s)</label>
+                        <textarea name="sports_preferences_written" placeholder="Write the youth's sports preference(s) here for manual encoding later."></textarea>
                     </div>
                 </div>
             </div>

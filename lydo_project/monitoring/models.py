@@ -118,6 +118,7 @@ class Youth(models.Model):
     work_status = models.CharField(max_length=50, blank=True)
     sports_preferences = models.TextField(blank=True, default='[]')
     talent_preferences = models.TextField(blank=True, default='[]')
+    sports_competition_levels = models.TextField(blank=True, default='[]')
     sports_preference_other = models.CharField(max_length=200, blank=True)
     talent_preference_other = models.CharField(max_length=200, blank=True)
     

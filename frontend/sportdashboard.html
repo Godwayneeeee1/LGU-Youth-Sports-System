@@ -1,0 +1,2228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Dashboard | LGU Youth & Sports</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260420-sports-dashboard-input">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .page-body {
+            max-width: 1300px;
+        }
+        .sports-summary-strip {
+            margin-top: 16px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+            box-shadow: var(--shadow-xs);
+        }
+        .sports-summary-title {
+            font-size: .82rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 10px;
+        }
+        .sports-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .sports-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: rgba(35,81,166,.08);
+            border: 1px solid rgba(35,81,166,.12);
+            color: var(--navy);
+            font-size: .78rem;
+            font-weight: 800;
+        }
+        .sports-chip-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            background: #fff;
+            color: var(--navy-light);
+            font-size: .72rem;
+            font-weight: 900;
+        }
+        .sports-empty-state {
+            padding: 28px 18px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: .92rem;
+        }
+        .sports-card-note {
+            margin-top: 8px;
+            font-size: .76rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+            min-height: 34px;
+        }
+        .sports-card-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .sports-card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .sports-card-badge svg {
+            flex-shrink: 0;
+        }
+        .sports-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .sports-card-top {
+            font-size: .78rem;
+            font-weight: 800;
+            color: var(--navy);
+        }
+        .sports-card-top span {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .sports-card-share {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .72rem;
+            color: var(--navy-light);
+            font-weight: 800;
+        }
+        .sports-barangay-card {
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .sports-barangay-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 38px rgba(15,37,88,.14);
+        }
+        .sports-barangay-card.is-active {
+            border-color: rgba(35,81,166,.35);
+            box-shadow: 0 18px 40px rgba(35,81,166,.18);
+        }
+        .sports-card-select {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(35,81,166,.08);
+            color: var(--navy-light);
+            font-size: .72rem;
+            font-weight: 800;
+        }
+        .sports-workspace {
+            margin-top: 22px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+            box-shadow: var(--shadow-sm);
+        }
+        .sports-workspace-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .sports-workspace-kicker {
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 6px;
+        }
+        .sports-workspace-title {
+            font-size: 1.35rem;
+            margin-bottom: 6px;
+        }
+        .sports-workspace-copy {
+            color: var(--text-muted);
+            font-size: .92rem;
+            margin: 0;
+        }
+        .sports-workspace-tools {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .sports-selected-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 13px;
+            border-radius: 999px;
+            background: rgba(35,81,166,.08);
+            border: 1px solid rgba(35,81,166,.14);
+            color: var(--navy);
+            font-size: .8rem;
+            font-weight: 800;
+        }
+        .sports-selected-badge strong {
+            color: var(--navy-light);
+        }
+        .sports-workspace-search {
+            flex: 1;
+            min-width: 220px;
+            max-width: 420px;
+            margin-left: auto;
+        }
+        .sports-feedback {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: .88rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+        .sports-feedback.success {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #047857;
+        }
+        .sports-feedback.error {
+            background: #fff1f2;
+            border-color: #fecdd3;
+            color: #be123c;
+        }
+        .sports-youth-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .sports-youth-row,
+        .sports-youth-empty {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: var(--shadow-xs);
+        }
+        .sports-youth-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+        }
+        .sports-youth-main {
+            min-width: 220px;
+            flex: 0 0 240px;
+        }
+        .sports-youth-name {
+            font-weight: 800;
+            color: var(--navy);
+            font-size: .95rem;
+        }
+        .sports-youth-meta {
+            color: var(--text-muted);
+            font-size: .78rem;
+            margin-top: 4px;
+        }
+        .sports-youth-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+        .sports-youth-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: var(--navy-light);
+            font-size: .75rem;
+            font-weight: 800;
+        }
+        .sports-youth-tag.muted {
+            background: #f8fafc;
+            color: var(--text-muted);
+        }
+        .sports-youth-actions {
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-width: 230px;
+        }
+        .sports-youth-empty {
+            padding: 28px 18px;
+            text-align: center;
+        }
+        .sports-youth-empty h3 {
+            font-size: 1.05rem;
+            margin-bottom: 6px;
+        }
+        .sports-youth-empty p {
+            margin: 0 0 14px;
+            color: var(--text-muted);
+            font-size: .9rem;
+        }
+        .sports-modal-note {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            font-size: .86rem;
+            font-weight: 700;
+        }
+        .sports-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .sports-preference-section {
+            margin-top: 18px;
+        }
+        .sports-checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .sports-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+        .sports-option:hover {
+            border-color: rgba(35,81,166,.28);
+            box-shadow: 0 10px 22px rgba(35,81,166,.08);
+            transform: translateY(-1px);
+        }
+        .sports-option input {
+            margin: 0;
+            accent-color: var(--navy-light);
+        }
+        .sports-option span {
+            color: var(--text-base);
+            font-size: .84rem;
+            font-weight: 700;
+        }
+        .sports-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .sports-detail-card {
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: var(--shadow-xs);
+        }
+        .sports-detail-label {
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 6px;
+        }
+        .sports-detail-value {
+            color: var(--navy);
+            font-size: .95rem;
+            font-weight: 800;
+            line-height: 1.45;
+        }
+        .sports-detail-chip-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .sports-detail-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: var(--navy-light);
+            font-size: .78rem;
+            font-weight: 800;
+        }
+        .sports-detail-empty {
+            color: var(--text-muted);
+            font-size: .82rem;
+            font-weight: 700;
+        }
+        .sports-folder-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .sports-folder-copy {
+            margin: 12px 0 16px;
+            color: var(--text-muted);
+            font-size: .92rem;
+        }
+        .sports-delete-dialog {
+            max-width: 540px;
+        }
+        .sports-delete-modal {
+            border: none;
+            border-radius: 28px;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top right, rgba(225,29,72,.16), transparent 34%),
+                linear-gradient(180deg, #ffffff 0%, #fff6f7 100%);
+            box-shadow: 0 28px 70px rgba(15, 23, 42, .24);
+        }
+        .sports-delete-shell {
+            padding: 28px;
+        }
+        .sports-delete-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .sports-delete-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #fee2e2 0%, #ffe4e6 100%);
+            color: #be123c;
+            box-shadow: inset 0 0 0 1px rgba(190,18,60,.1);
+            flex-shrink: 0;
+        }
+        .sports-delete-kicker {
+            margin-bottom: 6px;
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: #be123c;
+        }
+        .sports-delete-title {
+            margin: 0 0 8px;
+            color: #172554;
+            font-size: 1.35rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .sports-delete-copy {
+            margin: 0;
+            color: #475569;
+            font-size: .95rem;
+            line-height: 1.65;
+        }
+        .sports-delete-card {
+            margin-bottom: 16px;
+            padding: 16px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(244,114,182,.16);
+            background: rgba(255,255,255,.88);
+            box-shadow: 0 16px 30px rgba(15,23,42,.06);
+        }
+        .sports-delete-label {
+            margin-bottom: 10px;
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        .sports-delete-name {
+            margin-bottom: 12px;
+            color: #0f172a;
+            font-size: 1.02rem;
+            font-weight: 900;
+        }
+        .sports-delete-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .sports-delete-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            font-size: .76rem;
+            font-weight: 800;
+        }
+        .sports-delete-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fff1f2 0%, #fff7ed 100%);
+            border: 1px solid #fecdd3;
+            color: #9f1239;
+            font-size: .86rem;
+            font-weight: 700;
+            line-height: 1.55;
+        }
+        .sports-delete-warning svg {
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .sports-delete-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+        .sports-delete-confirm-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 170px;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
+            color: #fff;
+            font-size: .88rem;
+            font-weight: 800;
+            box-shadow: 0 16px 28px rgba(225,29,72,.24);
+            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+        }
+        .sports-delete-confirm-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 30px rgba(225,29,72,.3);
+        }
+        .sports-delete-confirm-btn:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-primary-lydo[disabled],
+        .btn-secondary-lydo[disabled] {
+            opacity: .55;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+        }
+        @media (max-width: 991px) {
+            .sports-checkbox-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 767px) {
+            .sports-summary-strip,
+            .sports-workspace {
+                padding: 14px;
+            }
+            .sports-card-note {
+                min-height: 0;
+            }
+            .sports-workspace-head,
+            .sports-workspace-tools,
+            .sports-youth-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .sports-folder-actions {
+                width: 100%;
+            }
+            .sports-delete-shell {
+                padding: 22px 18px 18px;
+            }
+            .sports-delete-top,
+            .sports-delete-actions {
+                flex-direction: column;
+            }
+            .sports-delete-confirm-btn,
+            .sports-delete-actions .btn-secondary-lydo {
+                width: 100%;
+            }
+            .sports-workspace-search {
+                max-width: none;
+                margin-left: 0;
+            }
+            .sports-youth-main,
+            .sports-youth-actions {
+                min-width: 0;
+                flex: 1 1 auto;
+            }
+            .sports-detail-grid,
+            .sports-checkbox-grid,
+            .sports-modal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="app-navbar">
+    <button class="btn-navbar-menu" onclick="toggleSidebar()" aria-label="Menu">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+        Menu
+    </button>
+
+    <a class="navbar-brand-area" href="/sportdashboard/">
+        <img src="{% static 'images/logo.png' %}" alt="LGU Youth & Sports Logo">
+        <div>
+            <div class="brand-text-main">LGU Youth & Sports</div>
+            <div class="brand-text-sub">Manolo Fortich, Bukidnon</div>
+        </div>
+    </a>
+
+    <div class="navbar-spacer"></div>
+
+    <div class="navbar-user" id="user-display" style="display:none;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="account-label">Account</span>: <b id="username-span"></b>
+    </div>
+
+    <button id="logout-btn" class="btn-logout" onclick="logout()" style="display:none;">Logout</button>
+</nav>
+
+<div id="side-menu" aria-hidden="true">
+    <div class="side-menu-header">
+        <div class="side-menu-logo">
+            <img src="{% static 'images/logo.png' %}" alt="logo">
+            <span>LGU Youth & Sports</span>
+        </div>
+        <button class="btn-close-side" onclick="closeSidebar()" aria-label="Close">&times;</button>
+    </div>
+    <div class="side-menu-body">
+        <div class="side-menu-section">Youth Navigation</div>
+        <a href="/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </a>
+        <a href="/reports/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Reports
+        </a>
+        <a href="/heatmap/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+            Heatmap
+        </a>
+        <a href="/talentsport/" class="menu-item" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3l2.7 5.47 6.03.88-4.36 4.25 1.03 6-5.4-2.84-5.4 2.84 1.03-6-4.36-4.25 6.03-.88z"/></svg>
+            Talent/Sports Map
+        </a>
+        <a href="/account/" class="menu-item system-admin-only" style="display:none;" onclick="closeSidebar();">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Barangay Account Management
+        </a>
+        <div class="side-menu-cta">
+            <div class="side-menu-cta-title">Sports Navigation</div>
+            <a href="/sportdashboard/" class="side-menu-switch active" onclick="closeSidebar();">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="8" r="5"/><path d="M13 13l7 7"/><path d="M14.5 5.5h2.5v2.5"/><path d="M3 17c1.5-1 3-1.5 5-1.5"/></svg>
+                Switch to Sports Dashboard
+            </a>
+            <a href="/sportreport/" class="side-menu-switch" onclick="closeSidebar();">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+                Open Sports Report
+            </a>
+            <div class="side-menu-switch-note">Dashboard overview and scoped sports reporting for admin and barangay users.</div>
+        </div>
+    </div>
+</div>
+<div id="side-overlay" class="side-overlay" onclick="closeSidebar()" aria-hidden="true"></div>
+
+<div class="page-body">
+    <div id="dashboard-view">
+        <div class="page-header">
+            <div>
+                <h1 class="page-header-title">Sports Dashboard</h1>
+                <p class="page-header-sub" id="sports-page-sub">Sports participation across the accessible barangays of Manolo Fortich, Bukidnon</p>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="sports-top-stats">
+            <div class="stat-card primary">
+                <span class="stat-accent"></span>
+                <div class="stat-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="sports-stat-interest">0</div>
+                    <div class="stat-label">Sports-Ready Youth</div>
+                </div>
+            </div>
+            <div class="stat-card success">
+                <span class="stat-accent"></span>
+                <div class="stat-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M4 12h16"/></svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="sports-stat-selections">0</div>
+                    <div class="stat-label">Sports Selections</div>
+                </div>
+            </div>
+            <div class="stat-card warning">
+                <span class="stat-accent"></span>
+                <div class="stat-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3l7 4v10l-7 4-7-4V7l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="sports-stat-top">-</div>
+                    <div class="stat-label">Top Sport</div>
+                </div>
+            </div>
+            <div class="stat-card info">
+                <span class="stat-accent"></span>
+                <div class="stat-icon">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10"/><path d="M7 12h6"/></svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="sports-stat-barangays">0</div>
+                    <div class="stat-label">Active Barangays</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-bar-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+            </div>
+            <div>
+                <label>Select Barangay Folder</label>
+                <div style="font-size:.78rem;color:var(--text-muted);">Open one of the 22 barangay folders to manage sports information for that area.</div>
+            </div>
+            <div style="flex:1; min-width:200px; max-width:400px; margin-left:auto;">
+                <input id="sports-barangay-search"
+                       class="form-control"
+                       placeholder="&#128269; Search barangay..."
+                       oninput="filterSportsBarangayGrid(this.value)"
+                       style="border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;font-size:.875rem;width:100%;">
+            </div>
+        </div>
+
+        <div class="sports-summary-strip">
+            <div class="sports-summary-title">Most Popular Sports Right Now</div>
+            <div id="sports-popular-row" class="sports-chip-row">
+                <span class="sports-chip"><span class="sports-chip-rank">1</span>Loading sports trends...</span>
+            </div>
+        </div>
+
+        <div id="barangay-grid"></div>
+        <div id="sports-dashboard-empty" class="sports-empty-state" style="display:none;">No sports preference data is available for the current scope yet.</div>
+    </div>
+
+    <div id="list-view" style="display:none;">
+        <div class="page-header">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <button class="btn-secondary-lydo" onclick="showSportsDashboard()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                    Back
+                </button>
+                <div>
+                    <h2 class="page-header-title" id="sports-current-barangay-title" style="font-size:1.3rem;">Barangay Sports Folder</h2>
+                    <p class="page-header-sub" id="sports-current-barangay-sub" style="margin:0;">Sports records for this barangay</p>
+                </div>
+            </div>
+            <div class="sports-folder-actions">
+                <button type="button" class="btn-secondary-lydo" onclick="viewSportsBarangaySummary()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+                    View Summary
+                </button>
+                <button id="sports-add-entry-btn" class="btn-primary-lydo" type="button" onclick="openSportsEntryModal()" disabled>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Sports Entry
+                </button>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div class="content-card-title">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M4 12h16"/></svg>
+                    Youth Sports Records
+                </div>
+                <input id="sports-youth-search"
+                       class="form-control"
+                       placeholder="Search youth sports records..."
+                       oninput="renderSportsYouthList()"
+                       disabled
+                       style="max-width:280px;font-size:.875rem;">
+            </div>
+            <div class="content-card-body">
+                <div id="sports-selected-badge" class="sports-selected-badge">No barangay selected yet</div>
+                <p class="sports-folder-copy" id="sports-workspace-copy">Select one of the barangay folders above to start encoding sports information.</p>
+                <div id="sports-save-feedback" class="sports-feedback success" style="display:none;"></div>
+                <div id="sports-youth-list" class="sports-youth-list">
+                    <div class="sports-youth-empty">
+                        <h3>Select a barangay first</h3>
+                        <p>Once you open a barangay folder, the sports-only youth list will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sportsPreferenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sports-modal-title">Add Sports Entry</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="sports-modal-note">This page saves the youth identity details needed for the record and focuses only on sports preference input.</div>
+                <div id="sports-modal-alert" class="alert alert-danger" style="display:none;margin-bottom:16px;"></div>
+                <form id="sportsPreferenceForm">
+                    <input type="hidden" id="sports-entry-id">
+                    <div class="sports-modal-grid">
+                        <div>
+                            <label class="form-label">Barangay</label>
+                            <select id="sports-entry-barangay" class="form-select" disabled></select>
+                        </div>
+                        <div>
+                            <label class="form-label">Youth Name</label>
+                            <input id="sports-entry-name" class="form-control" maxlength="150" placeholder="Enter full name" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Birthdate</label>
+                            <input id="sports-entry-birthdate" class="form-control" type="date" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Sex</label>
+                            <select id="sports-entry-sex" class="form-select" required>
+                                <option value="">Select sex</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Purok</label>
+                            <input id="sports-entry-purok" class="form-control" maxlength="120" placeholder="Optional purok or sitio">
+                        </div>
+                    </div>
+
+                    <div class="sports-preference-section">
+                        <label class="form-label">Sports Preferences</label>
+                        <div id="sports-preference-options" class="sports-checkbox-grid"></div>
+                    </div>
+
+                    <div class="sports-preference-section">
+                        <label class="form-label">Levels of Sports Competition Played</label>
+                        <div id="sports-competition-level-options" class="sports-checkbox-grid"></div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label">Other Sport</label>
+                        <input id="sports-entry-other" class="form-control" maxlength="120" placeholder="Enter a sport not listed above">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-lydo" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary-lydo" id="sports-save-btn" onclick="document.getElementById('sportsPreferenceForm').requestSubmit();">Save Sports Entry</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sportsSummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Youth Sports Information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="sports-modal-note">This view shows only the sports details saved for the selected youth record inside the current barangay folder.</div>
+                <div id="sports-summary-content" class="sports-detail-grid"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-lydo" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sportsBarangaySummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Barangay Sports Summary</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="sports-modal-note">This summary is limited to sports information saved in the selected barangay folder.</div>
+                <div id="sports-barangay-summary-content" class="sports-detail-grid"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-lydo" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sportsDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered sports-delete-dialog">
+        <div class="modal-content sports-delete-modal">
+            <div class="sports-delete-shell">
+                <div class="sports-delete-top">
+                    <div class="sports-delete-icon" aria-hidden="true">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M3 6h18"/>
+                            <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+                            <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/>
+                            <path d="M10 11v6"/>
+                            <path d="M14 11v6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="sports-delete-kicker">Delete Sports Info</div>
+                        <h5 class="sports-delete-title">Remove this sports profile?</h5>
+                        <p class="sports-delete-copy" id="sports-delete-copy">
+                            This action clears the saved sports preferences and competition levels, but keeps the youth record inside the barangay folder.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="sports-delete-card">
+                    <div class="sports-delete-label">Selected Record</div>
+                    <div class="sports-delete-name" id="sports-delete-name">Youth Name</div>
+                    <div class="sports-delete-meta">
+                        <div class="sports-delete-pill" id="sports-delete-barangay">Barangay</div>
+                        <div class="sports-delete-pill" id="sports-delete-summary">0 sports saved</div>
+                    </div>
+                </div>
+
+                <div class="sports-delete-warning">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 9v4"/>
+                        <path d="M12 17h.01"/>
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+                    </svg>
+                    <div>The youth account will remain available in the folder. Only the sports selections, competition levels, and custom other-sport entry will be removed.</div>
+                </div>
+
+                <div class="sports-delete-actions">
+                    <button type="button" class="btn-secondary-lydo" data-bs-dismiss="modal">Keep Record</button>
+                    <button type="button" class="sports-delete-confirm-btn" id="sports-delete-confirm-btn" onclick="confirmDeleteSportsInfo()">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 6h18"/>
+                            <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+                            <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/>
+                        </svg>
+                        Delete Sports Info
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SPORTS_PALETTE = ['#2351a6','#059669','#7c3aed','#d97706','#0284c7','#e11d48','#15803d','#9333ea','#c2410c','#0891b2','#1d4ed8','#b45309'];
+    const SPORT_PREFERENCE_OPTIONS = [
+        'Adventure Racing',
+        'Aerobics',
+        'Archery',
+        'Arnis',
+        'Arm Wrestling',
+        'Athletics',
+        'Auto Racing',
+        'Badminton',
+        'Baseball',
+        'Basketball',
+        'Billiards',
+        'BJJ',
+        'Bobsleigh',
+        'Bowling',
+        'Boxing',
+        'Canoeing',
+        'Chess',
+        'Climbing',
+        'Cricket',
+        'CrossFit',
+        'Curling',
+        'Cycling',
+        'Darts',
+        'Disc Golf',
+        'Diving',
+        'Dodgeball',
+        'Dragon Boat Racing',
+        'E-Sports',
+        'Endurance Running',
+        'Equestrian',
+        'Extreme Sports',
+        'Fencing',
+        'Figure Skating',
+        'Floorball',
+        'Football',
+        'Freestyle Skiing',
+        'Gaelic Football',
+        'Gliding',
+        'Go-Karting',
+        'Golf',
+        'Gymnastics',
+        'Handball',
+        'Hang Gliding',
+        'Hockey (Field/Ice)',
+        'Horse Racing',
+        'Hurling',
+        'Ice Hockey',
+        'Ice Skating',
+        'Indoor Volleyball',
+        'Jai Alai',
+        'Javelin',
+        'Jet Skiing',
+        'Judo',
+        'Jump Rope',
+        'Karate',
+        'Kayaking',
+        'Kickboxing',
+        'Kiteboarding',
+        'Korfball',
+        'Lacrosse',
+        'Lawn Bowls',
+        'Log Rolling',
+        'Long Jump',
+        'Luge',
+        'Martial Arts',
+        'Mixed Martial Arts (MMA)',
+        'Modern Pentathlon',
+        'Motocross',
+        'Mountain Biking',
+        'Netball',
+        'Ninja Warrior Competitions',
+        'Novuss',
+        'Octopush (Underwater Hockey)',
+        'Olympic Weightlifting',
+        'Orienteering',
+        'Padel',
+        'Paintball',
+        'Parkour',
+        'Pickleball',
+        'Polo',
+        'Powerlifting',
+        'Qianball',
+        'Quad Biking',
+        'Quidditch (Muggle Version)',
+        'Racquetball',
+        'Rock Climbing',
+        'Roller Derby',
+        'Rowing',
+        'Rugby',
+        'Sepak Takraw',
+        'Skateboarding',
+        'Skiing',
+        'Soccer',
+        'Softball',
+        'Squash',
+        'Surfing',
+        'Swimming',
+        'Table Tennis',
+        'Taekwondo',
+        'Tennis',
+        'Track and Field',
+        'Track Cycling',
+        'Triathlon',
+        'Ultimate Frisbee',
+        'Ultrarunning',
+        'Underwater Hockey',
+        'Unicycling',
+        'Vaulting',
+        'Vertical Running',
+        'Voivinam',
+        'Volleyball',
+        'Wakeboarding',
+        'Water Polo',
+        'Weightlifting',
+        'Windsurfing',
+        'Wrestling',
+        'X-Country Skiing',
+        'Xare (Basque Racket Sport)',
+        'Xtreme Sports',
+        'Yachting',
+        'Yak Polo',
+        'Yoga (Competitive)',
+        'Youth Athletics',
+        'Zen Archery',
+        'Zipline Racing',
+        'Zorb Football',
+        'Zorbing'
+    ].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const SPORT_COMPETITION_LEVEL_OPTIONS = [
+        'Intramurals',
+        'District Meet',
+        'Division Meets',
+        'Regional Meets',
+        'Palarong Pambansa',
+        'International Meets'
+    ];
+
+    const sportsDashboardState = {
+        currentUser: null,
+        barangays: [],
+        youths: [],
+        selectedBarangayId: null,
+        folderViewOpen: false,
+        stats: {
+            sports: [],
+            countsByBarangay: {},
+            totalInterested: 0,
+            totalSelections: 0
+        }
+    };
+
+    let SPORTS_ENTRY_MODAL = null;
+    let SPORTS_SUMMARY_MODAL = null;
+    let SPORTS_BARANGAY_SUMMARY_MODAL = null;
+    let SPORTS_DELETE_MODAL = null;
+    let sportsFeedbackTimer = null;
+    let sportsDeleteTargetId = null;
+
+    function toggleSidebar() {
+        const menu = document.getElementById('side-menu');
+        const overlay = document.getElementById('side-overlay');
+        menu?.classList.toggle('open');
+        overlay?.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        document.getElementById('side-menu')?.classList.remove('open');
+        document.getElementById('side-overlay')?.classList.remove('show');
+    }
+
+    function logout() {
+        fetch('/api/logout/').then(() => window.location.href = '/login/');
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeSidebar();
+    });
+
+    function normalizeText(value) {
+        return String(value || '').trim();
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function getSportsEntryModal() {
+        const modalElement = document.getElementById('sportsPreferenceModal');
+        if (!modalElement || typeof bootstrap === 'undefined') return null;
+        if (!SPORTS_ENTRY_MODAL) {
+            SPORTS_ENTRY_MODAL = new bootstrap.Modal(modalElement);
+        }
+        return SPORTS_ENTRY_MODAL;
+    }
+
+    function getSportsSummaryModal() {
+        const modalElement = document.getElementById('sportsSummaryModal');
+        if (!modalElement || typeof bootstrap === 'undefined') return null;
+        if (!SPORTS_SUMMARY_MODAL) {
+            SPORTS_SUMMARY_MODAL = new bootstrap.Modal(modalElement);
+        }
+        return SPORTS_SUMMARY_MODAL;
+    }
+
+    function getSportsBarangaySummaryModal() {
+        const modalElement = document.getElementById('sportsBarangaySummaryModal');
+        if (!modalElement || typeof bootstrap === 'undefined') return null;
+        if (!SPORTS_BARANGAY_SUMMARY_MODAL) {
+            SPORTS_BARANGAY_SUMMARY_MODAL = new bootstrap.Modal(modalElement);
+        }
+        return SPORTS_BARANGAY_SUMMARY_MODAL;
+    }
+
+    function getSportsDeleteModal() {
+        const modalElement = document.getElementById('sportsDeleteModal');
+        if (!modalElement || typeof bootstrap === 'undefined') return null;
+        if (!SPORTS_DELETE_MODAL) {
+            SPORTS_DELETE_MODAL = new bootstrap.Modal(modalElement);
+        }
+        return SPORTS_DELETE_MODAL;
+    }
+
+    function findBarangayById(barangayId) {
+        return sportsDashboardState.barangays.find(item => Number(item.id) === Number(barangayId)) || null;
+    }
+
+    function getYouthById(youthId) {
+        return sportsDashboardState.youths.find(item => Number(item.id) === Number(youthId)) || null;
+    }
+
+    function getYouthBirthdate(youth) {
+        return normalizeText(youth?.full_data?.birthdate);
+    }
+
+    function getYouthSex(youth) {
+        return normalizeText(youth?.sex || youth?.full_data?.sex);
+    }
+
+    function getYouthPurok(youth) {
+        return normalizeText(youth?.full_data?.purok);
+    }
+
+    function getYouthSportsData(youth) {
+        return {
+            preferences: Array.isArray(youth?.full_data?.sports_preferences) ? youth.full_data.sports_preferences.filter(Boolean) : [],
+            competitionLevels: Array.isArray(youth?.full_data?.sports_competition_levels) ? youth.full_data.sports_competition_levels.filter(Boolean) : [],
+            other: normalizeText(youth?.full_data?.sports_preference_other)
+        };
+    }
+
+    function getYouthAgeFromBirthdate(birthdate) {
+        if (!birthdate) return null;
+        const parsed = new Date(`${birthdate}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) return null;
+        const today = new Date();
+        let age = today.getFullYear() - parsed.getFullYear();
+        const monthDiff = today.getMonth() - parsed.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsed.getDate())) age -= 1;
+        return age >= 0 ? age : null;
+    }
+
+    function getYouthAge(youth) {
+        return getYouthAgeFromBirthdate(getYouthBirthdate(youth));
+    }
+
+    function buildSportsTagMarkup(youth) {
+        const sportsData = getYouthSportsData(youth);
+        const tags = sportsData.preferences.map(item => `<span class="sports-youth-tag">${escapeHtml(item)}</span>`);
+        if (sportsData.other) {
+            tags.push(`<span class="sports-youth-tag">Other: ${escapeHtml(sportsData.other)}</span>`);
+        }
+        if (sportsData.competitionLevels.length) {
+            tags.push(`<span class="sports-youth-tag muted">Competition Levels: ${sportsData.competitionLevels.length}</span>`);
+        }
+        if (!tags.length) {
+            tags.push('<span class="sports-youth-tag muted">No sport saved yet</span>');
+        }
+        return tags.join('');
+    }
+
+    function buildSportsSummaryField(label, value) {
+        return `
+            <div class="sports-detail-card">
+                <div class="sports-detail-label">${escapeHtml(label)}</div>
+                <div class="sports-detail-value">${value}</div>
+            </div>
+        `;
+    }
+
+    function viewSportsInfo(youthId) {
+        const youth = getYouthById(youthId);
+        const container = document.getElementById('sports-summary-content');
+        if (!youth || !container) {
+            showSportsFeedback('That youth record could not be found anymore.', 'error');
+            return;
+        }
+
+        const barangay = findBarangayById(youth.barangay_id);
+        const age = getYouthAge(youth);
+        const sportsData = getYouthSportsData(youth);
+        const chips = sportsData.preferences.length || sportsData.other
+            ? `
+                <div class="sports-detail-chip-wrap">
+                    ${sportsData.preferences.map(item => `<span class="sports-detail-chip">${escapeHtml(item)}</span>`).join('')}
+                    ${sportsData.other ? `<span class="sports-detail-chip">Other: ${escapeHtml(sportsData.other)}</span>` : ''}
+                </div>
+            `
+            : '<div class="sports-detail-empty">No sports information has been saved yet for this youth.</div>';
+        const competitionChips = sportsData.competitionLevels.length
+            ? `
+                <div class="sports-detail-chip-wrap">
+                    ${sportsData.competitionLevels.map(item => `<span class="sports-detail-chip">${escapeHtml(item)}</span>`).join('')}
+                </div>
+            `
+            : '<div class="sports-detail-empty">No competition level has been saved yet for this youth.</div>';
+
+        container.innerHTML = [
+            buildSportsSummaryField('Youth Name', escapeHtml(youth.name || 'Not provided')),
+            buildSportsSummaryField('Barangay Folder', escapeHtml(barangay?.name || youth.barangay_name || 'Not assigned')),
+            buildSportsSummaryField('Age', escapeHtml(age != null ? `${age} years old` : 'Not available')),
+            buildSportsSummaryField('Sex', escapeHtml(getYouthSex(youth) || 'Not provided')),
+            buildSportsSummaryField('Purok', escapeHtml(getYouthPurok(youth) || 'Not provided')),
+            buildSportsSummaryField('Sports Information', chips),
+            buildSportsSummaryField('Competition Levels Played', competitionChips)
+        ].join('');
+
+        getSportsSummaryModal()?.show();
+    }
+
+    function buildSportsPopularityMarkup(entries) {
+        if (!entries.length) {
+            return '<div class="sports-detail-empty">No sports preferences have been saved in this barangay folder yet.</div>';
+        }
+        return `
+            <div class="sports-detail-chip-wrap">
+                ${entries.map(([label, count]) => `<span class="sports-detail-chip">${escapeHtml(label)} (${count})</span>`).join('')}
+            </div>
+        `;
+    }
+
+    function viewSportsBarangaySummary() {
+        const selectedBarangay = getSelectedBarangay();
+        const container = document.getElementById('sports-barangay-summary-content');
+        if (!selectedBarangay || !container) {
+            showSportsFeedback('Open a barangay sports folder first to view its summary.', 'error');
+            return;
+        }
+
+        const youths = getSelectedBarangayYouth();
+        let interested = 0;
+        let totalSelections = 0;
+        let maleInterested = 0;
+        let femaleInterested = 0;
+        let otherEntries = 0;
+        let competitionProfiles = 0;
+        const sportCounts = new Map();
+
+        youths.forEach(youth => {
+            const sportsData = getYouthSportsData(youth);
+            const sex = getYouthSex(youth).toLowerCase();
+            const hasInterest = sportsData.preferences.length > 0 || !!sportsData.other || sportsData.competitionLevels.length > 0;
+
+            if (hasInterest) {
+                interested += 1;
+                if (sex === 'male') maleInterested += 1;
+                if (sex === 'female') femaleInterested += 1;
+            }
+            if (sportsData.competitionLevels.length) {
+                competitionProfiles += 1;
+            }
+
+            sportsData.preferences.forEach(label => {
+                totalSelections += 1;
+                sportCounts.set(label, (sportCounts.get(label) || 0) + 1);
+            });
+
+            if (sportsData.other) {
+                totalSelections += 1;
+                otherEntries += 1;
+                sportCounts.set(sportsData.other, (sportCounts.get(sportsData.other) || 0) + 1);
+            }
+        });
+
+        const rankedSports = Array.from(sportCounts.entries()).sort((a, b) => {
+            if (b[1] !== a[1]) return b[1] - a[1];
+            return String(a[0]).localeCompare(String(b[0]));
+        });
+        const topSport = rankedSports[0];
+
+        container.innerHTML = [
+            buildSportsSummaryField('Barangay Folder', escapeHtml(selectedBarangay.name)),
+            buildSportsSummaryField('Youth Records in Folder', escapeHtml(String(youths.length))),
+            buildSportsSummaryField('Youth With Sports Info', escapeHtml(String(interested))),
+            buildSportsSummaryField('Total Sports Selections', escapeHtml(String(totalSelections))),
+            buildSportsSummaryField('Male With Sports Info', escapeHtml(String(maleInterested))),
+            buildSportsSummaryField('Female With Sports Info', escapeHtml(String(femaleInterested))),
+            buildSportsSummaryField('Youth With Competition Levels', escapeHtml(String(competitionProfiles))),
+            buildSportsSummaryField('Top Sport', escapeHtml(topSport ? `${topSport[0]} (${topSport[1]})` : 'No sports saved yet')),
+            buildSportsSummaryField('Other Sport Entries', escapeHtml(String(otherEntries))),
+            buildSportsSummaryField('Most Popular Sports', buildSportsPopularityMarkup(rankedSports.slice(0, 8)))
+        ].join('');
+
+        getSportsBarangaySummaryModal()?.show();
+    }
+
+    function aggregateSports() {
+        const sportMap = new Map();
+        const countsByBarangay = {};
+        let totalInterested = 0;
+        let totalSelections = 0;
+
+        (Array.isArray(sportsDashboardState.youths) ? sportsDashboardState.youths : []).forEach(youth => {
+            const barangayId = String(youth?.barangay_id || '');
+            const barangayName = normalizeText(youth?.barangay_name);
+            const sex = getYouthSex(youth).toLowerCase();
+            const sportsData = getYouthSportsData(youth);
+            const sports = sportsData.preferences;
+            const other = sportsData.other;
+            const hasInterest = sports.length > 0 || !!other || sportsData.competitionLevels.length > 0;
+
+            if (!countsByBarangay[barangayId]) {
+                countsByBarangay[barangayId] = {
+                    name: barangayName,
+                    interested: 0,
+                    selections: 0,
+                    sports: new Map()
+                };
+            }
+
+            if (hasInterest) {
+                countsByBarangay[barangayId].interested += 1;
+                totalInterested += 1;
+            }
+
+            sports.forEach(label => {
+                const key = normalizeText(label);
+                if (!key) return;
+                totalSelections += 1;
+                countsByBarangay[barangayId].selections += 1;
+                countsByBarangay[barangayId].sports.set(key, (countsByBarangay[barangayId].sports.get(key) || 0) + 1);
+
+                if (!sportMap.has(key)) {
+                    sportMap.set(key, { label: key, total: 0, male: 0, female: 0 });
+                }
+                const item = sportMap.get(key);
+                item.total += 1;
+                if (sex === 'male') item.male += 1;
+                if (sex === 'female') item.female += 1;
+            });
+
+            if (other) {
+                totalSelections += 1;
+                countsByBarangay[barangayId].selections += 1;
+                countsByBarangay[barangayId].sports.set(other, (countsByBarangay[barangayId].sports.get(other) || 0) + 1);
+            }
+        });
+
+        const sports = Array.from(sportMap.values()).sort((a, b) => {
+            if (b.total !== a.total) return b.total - a.total;
+            return a.label.localeCompare(b.label);
+        });
+
+        Object.values(countsByBarangay).forEach(item => {
+            const topEntry = Array.from(item.sports.entries()).sort((a, b) => {
+                if (b[1] !== a[1]) return b[1] - a[1];
+                return String(a[0]).localeCompare(String(b[0]));
+            })[0];
+            item.topSport = topEntry ? topEntry[0] : '';
+            item.topSportCount = topEntry ? topEntry[1] : 0;
+        });
+
+        sportsDashboardState.stats = {
+            sports,
+            countsByBarangay,
+            totalInterested,
+            totalSelections
+        };
+    }
+
+    function setSportStat(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    function renderTopStats() {
+        const stats = sportsDashboardState.stats;
+        const activeBarangays = Object.values(stats.countsByBarangay).filter(item => item.interested > 0).length;
+        const topSport = stats.sports[0];
+
+        setSportStat('sports-stat-interest', String(stats.totalInterested));
+        setSportStat('sports-stat-selections', String(stats.totalSelections));
+        setSportStat('sports-stat-top', topSport ? topSport.label : 'None');
+        setSportStat('sports-stat-barangays', String(activeBarangays));
+
+        const sub = document.getElementById('sports-page-sub');
+        if (sub) {
+            if (sportsDashboardState.currentUser && !sportsDashboardState.currentUser.is_admin && sportsDashboardState.currentUser.barangay_name) {
+                sub.textContent = `Sports folder for ${sportsDashboardState.currentUser.barangay_name}, Manolo Fortich, Bukidnon`;
+            } else {
+                sub.textContent = 'Sports folders and sports-only youth records across the accessible barangays of Manolo Fortich, Bukidnon';
+            }
+        }
+    }
+
+    function renderPopularSports() {
+        const row = document.getElementById('sports-popular-row');
+        if (!row) return;
+        const sports = sportsDashboardState.stats.sports.slice(0, 6);
+
+        if (!sports.length) {
+            row.innerHTML = '<span class="sports-chip"><span class="sports-chip-rank">1</span>No saved sports yet</span>';
+            return;
+        }
+
+        row.innerHTML = sports.map((sport, index) => `
+            <span class="sports-chip">
+                <span class="sports-chip-rank">${index + 1}</span>
+                ${escapeHtml(sport.label)} (${sport.total})
+            </span>
+        `).join('');
+    }
+
+    function renderBarangayGrid() {
+        const grid = document.getElementById('barangay-grid');
+        const empty = document.getElementById('sports-dashboard-empty');
+        if (!grid || !empty) return;
+
+        const hasAnyData = sportsDashboardState.stats.totalInterested > 0;
+        empty.style.display = hasAnyData ? 'none' : 'block';
+
+        grid.innerHTML = sportsDashboardState.barangays.map((barangay, index) => {
+            const color = SPORTS_PALETTE[index % SPORTS_PALETTE.length];
+            const number = String(index + 1).padStart(2, '0');
+            const stats = sportsDashboardState.stats.countsByBarangay[String(barangay.id)] || {
+                interested: 0,
+                selections: 0,
+                topSport: '',
+                topSportCount: 0
+            };
+            const interestedLabel = `${stats.interested} sports-ready youth`;
+            const selectionLabel = `${stats.selections} selection${stats.selections === 1 ? '' : 's'}`;
+            const topSportLabel = stats.topSport
+                ? `${escapeHtml(stats.topSport)} (${stats.topSportCount})`
+                : 'No sports recorded yet';
+            const share = sportsDashboardState.stats.totalInterested > 0
+                ? `${((stats.interested / sportsDashboardState.stats.totalInterested) * 100).toFixed(1)}% of sports-ready youth`
+                : 'Waiting for sports preference data';
+            const isActive = sportsDashboardState.folderViewOpen && Number(sportsDashboardState.selectedBarangayId) === Number(barangay.id);
+
+            return `
+                <div class="barangay-card sports-barangay-card ${isActive ? 'is-active' : ''}"
+                     data-barangay-id="${barangay.id}"
+                     onclick="selectSportsBarangay(${barangay.id})">
+                    <div class="bc-banner" style="background:${color};">
+                        <div class="bc-orb bc-orb-a"></div>
+                        <div class="bc-orb bc-orb-b"></div>
+                        <div class="bc-orb bc-orb-c"></div>
+                        <span class="bc-num">${number}</span>
+                    </div>
+                    <div class="bc-body">
+                        <div class="bc-name">${escapeHtml(barangay.name)}</div>
+                        <div class="bc-loc">
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            Manolo Fortich, Bukidnon
+                        </div>
+                        <div class="sports-card-note">${escapeHtml(share)}</div>
+                        <div class="sports-card-metrics">
+                            <span class="sports-card-badge" style="color:${color};background:${color}14;border:1px solid ${color}28;">
+                                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                                ${escapeHtml(interestedLabel)}
+                            </span>
+                            <span class="sports-card-badge" style="color:${color};background:${color}0f;border:1px solid ${color}24;">
+                                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M4 12h16"/></svg>
+                                ${escapeHtml(selectionLabel)}
+                            </span>
+                        </div>
+                        <div class="sports-card-footer">
+                            <div class="sports-card-top"><span>Top sport:</span> ${topSportLabel}</div>
+                            <span class="sports-card-share">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                ${isActive ? 'Sports folder open' : 'Open sports folder'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function filterSportsBarangayGrid(term) {
+        const normalized = String(term || '').trim().toLowerCase();
+        const grid = document.getElementById('barangay-grid');
+        if (!grid) return;
+        const cards = Array.from(grid.querySelectorAll('.sports-barangay-card'));
+        cards.forEach(card => {
+            const barangayId = Number(card.dataset.barangayId || 0);
+            const barangay = findBarangayById(barangayId);
+            const name = (barangay?.name || '').toLowerCase();
+            card.style.display = name.includes(normalized) ? '' : 'none';
+        });
+    }
+
+    function getSelectedBarangay() {
+        return findBarangayById(sportsDashboardState.selectedBarangayId);
+    }
+
+    function getSelectedBarangayYouth() {
+        if (!sportsDashboardState.selectedBarangayId) return [];
+        return sportsDashboardState.youths
+            .filter(youth => Number(youth?.barangay_id) === Number(sportsDashboardState.selectedBarangayId))
+            .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')));
+    }
+
+    function showSportsFeedback(message, tone = 'success') {
+        const feedback = document.getElementById('sports-save-feedback');
+        if (!feedback) return;
+        feedback.className = `sports-feedback ${tone}`;
+        feedback.textContent = message;
+        feedback.style.display = 'block';
+        if (sportsFeedbackTimer) window.clearTimeout(sportsFeedbackTimer);
+        sportsFeedbackTimer = window.setTimeout(() => {
+            feedback.style.display = 'none';
+        }, 3200);
+    }
+
+    function renderSportsYouthList() {
+        const list = document.getElementById('sports-youth-list');
+        const badge = document.getElementById('sports-selected-badge');
+        const copy = document.getElementById('sports-workspace-copy');
+        const searchInput = document.getElementById('sports-youth-search');
+        const addBtn = document.getElementById('sports-add-entry-btn');
+        if (!list || !badge || !copy || !searchInput || !addBtn) return;
+
+        const selectedBarangay = getSelectedBarangay();
+        if (!selectedBarangay) {
+            badge.innerHTML = 'No barangay selected yet';
+            copy.textContent = 'Select one of the barangay folders above to start encoding sports information.';
+            searchInput.disabled = true;
+            searchInput.value = '';
+            addBtn.disabled = true;
+            list.innerHTML = `
+                <div class="sports-youth-empty">
+                    <h3>Select a barangay first</h3>
+                    <p>Once you open a barangay folder, the sports-only youth list will appear here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const allRows = getSelectedBarangayYouth();
+        const query = normalizeText(searchInput.value).toLowerCase();
+        const rows = allRows.filter(youth => {
+            const sportsData = getYouthSportsData(youth);
+            const haystack = [
+                youth?.name,
+                getYouthPurok(youth),
+                getYouthSex(youth),
+                sportsData.other,
+                ...sportsData.competitionLevels,
+                ...sportsData.preferences
+            ].join(' ').toLowerCase();
+            return !query || haystack.includes(query);
+        });
+
+        badge.innerHTML = `<strong>${escapeHtml(selectedBarangay.name)}</strong> sports folder is open`;
+        copy.textContent = `Add, view, edit, or delete sports information for youth in ${selectedBarangay.name}. This folder is limited to the selected barangay so records stay organized.`;
+        searchInput.disabled = false;
+        addBtn.disabled = false;
+
+        if (!rows.length) {
+            const reason = allRows.length
+                ? 'No matching youth record was found for the current search.'
+                : `No youth record has been encoded for ${selectedBarangay.name} yet.`;
+            list.innerHTML = `
+                <div class="sports-youth-empty">
+                    <h3>${escapeHtml(selectedBarangay.name)} sports folder is ready</h3>
+                    <p>${escapeHtml(reason)}</p>
+                    <button type="button" class="btn-primary-lydo" onclick="openSportsEntryModal()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Sports Entry
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = rows.map(youth => {
+            const age = getYouthAge(youth);
+            const metaParts = [];
+            if (age != null) metaParts.push(`${age} yrs old`);
+            if (getYouthSex(youth)) metaParts.push(getYouthSex(youth));
+            metaParts.push(getYouthPurok(youth) || 'Purok not set');
+
+            return `
+                <div class="sports-youth-row">
+                    <div class="sports-youth-main">
+                        <div class="sports-youth-name">${escapeHtml(youth?.name)}</div>
+                        <div class="sports-youth-meta">${escapeHtml(metaParts.join(' | '))}</div>
+                    </div>
+                    <div class="sports-youth-tags">${buildSportsTagMarkup(youth)}</div>
+                    <div class="sports-youth-actions">
+                        <button type="button" class="btn-tbl view" onclick="viewSportsInfo(${Number(youth.id)})">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View
+                        </button>
+                        <button type="button" class="btn-tbl edit" onclick="openSportsEntryModal(${Number(youth.id)})">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            Edit Sports
+                        </button>
+                        <button type="button" class="btn-tbl delete" onclick="openDeleteSportsModal(${Number(youth.id)})">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            Delete Sports
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function showSportsDashboard() {
+        sportsDashboardState.folderViewOpen = false;
+        const dashboardView = document.getElementById('dashboard-view');
+        const listView = document.getElementById('list-view');
+        if (dashboardView) dashboardView.style.display = 'block';
+        if (listView) listView.style.display = 'none';
+        renderBarangayGrid();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function selectSportsBarangay(barangayId, focusList = true) {
+        sportsDashboardState.selectedBarangayId = Number(barangayId);
+        sportsDashboardState.folderViewOpen = true;
+        const selectedBarangay = getSelectedBarangay();
+        const dashboardView = document.getElementById('dashboard-view');
+        const listView = document.getElementById('list-view');
+        const title = document.getElementById('sports-current-barangay-title');
+        const sub = document.getElementById('sports-current-barangay-sub');
+
+        renderBarangayGrid();
+        renderSportsYouthList();
+        syncSportsEntryBarangaySelect();
+        if (title) {
+            title.textContent = selectedBarangay ? `${selectedBarangay.name} Sports Folder` : 'Barangay Sports Folder';
+        }
+        if (sub) {
+            sub.textContent = selectedBarangay
+                ? `Sports records and sports-only summary for ${selectedBarangay.name}`
+                : 'Sports records for this barangay';
+        }
+        if (dashboardView) dashboardView.style.display = 'none';
+        if (listView) listView.style.display = 'block';
+        if (focusList) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    function syncSportsEntryBarangaySelect() {
+        const select = document.getElementById('sports-entry-barangay');
+        if (!select) return;
+        select.innerHTML = sportsDashboardState.barangays.map(barangay => `
+            <option value="${barangay.id}" ${Number(barangay.id) === Number(sportsDashboardState.selectedBarangayId) ? 'selected' : ''}>
+                ${escapeHtml(barangay.name)}
+            </option>
+        `).join('');
+    }
+
+    function renderSportsPreferenceOptions() {
+        const container = document.getElementById('sports-preference-options');
+        if (!container) return;
+        container.innerHTML = SPORT_PREFERENCE_OPTIONS.map(option => `
+            <label class="sports-option">
+                <input type="checkbox" name="sports-preference-option" value="${escapeHtml(option)}">
+                <span>${escapeHtml(option)}</span>
+            </label>
+        `).join('');
+    }
+
+    function renderSportsCompetitionOptions() {
+        const container = document.getElementById('sports-competition-level-options');
+        if (!container) return;
+        container.innerHTML = SPORT_COMPETITION_LEVEL_OPTIONS.map(option => `
+            <label class="sports-option">
+                <input type="checkbox" name="sports-competition-level-option" value="${escapeHtml(option)}">
+                <span>${escapeHtml(option)}</span>
+            </label>
+        `).join('');
+    }
+
+    function clearSportsModalAlert() {
+        const alertBox = document.getElementById('sports-modal-alert');
+        if (!alertBox) return;
+        alertBox.style.display = 'none';
+        alertBox.textContent = '';
+    }
+
+    function setSportsModalAlert(message) {
+        const alertBox = document.getElementById('sports-modal-alert');
+        if (!alertBox) return;
+        alertBox.textContent = message;
+        alertBox.style.display = 'block';
+    }
+
+    function resetSportsEntryForm() {
+        document.getElementById('sportsPreferenceForm')?.reset();
+        document.getElementById('sports-entry-id').value = '';
+        document.querySelectorAll('input[name="sports-preference-option"]').forEach(input => {
+            input.checked = false;
+        });
+        document.querySelectorAll('input[name="sports-competition-level-option"]').forEach(input => {
+            input.checked = false;
+        });
+        clearSportsModalAlert();
+        syncSportsEntryBarangaySelect();
+    }
+
+    function applySportsSelections(selectedValues) {
+        const set = new Set((Array.isArray(selectedValues) ? selectedValues : []).map(item => normalizeText(item)));
+        document.querySelectorAll('input[name="sports-preference-option"]').forEach(input => {
+            input.checked = set.has(normalizeText(input.value));
+        });
+    }
+
+    function collectSportsSelections() {
+        return Array.from(document.querySelectorAll('input[name="sports-preference-option"]:checked'))
+            .map(input => normalizeText(input.value))
+            .filter(Boolean);
+    }
+
+    function applySportsCompetitionLevels(selectedValues) {
+        const set = new Set((Array.isArray(selectedValues) ? selectedValues : []).map(item => normalizeText(item)));
+        document.querySelectorAll('input[name="sports-competition-level-option"]').forEach(input => {
+            input.checked = set.has(normalizeText(input.value));
+        });
+    }
+
+    function collectSportsCompetitionLevels() {
+        return Array.from(document.querySelectorAll('input[name="sports-competition-level-option"]:checked'))
+            .map(input => normalizeText(input.value))
+            .filter(Boolean);
+    }
+
+    function openSportsEntryModal(youthId = null) {
+        if (youthId) {
+            const youth = getYouthById(youthId);
+            if (!youth) {
+                showSportsFeedback('That youth record could not be found anymore.', 'error');
+                return;
+            }
+            sportsDashboardState.selectedBarangayId = Number(youth.barangay_id);
+            renderBarangayGrid();
+            renderSportsYouthList();
+        }
+
+        const selectedBarangay = getSelectedBarangay();
+        if (!selectedBarangay) {
+            showSportsFeedback('Select a barangay folder first before adding a sports entry.', 'error');
+            return;
+        }
+
+        resetSportsEntryForm();
+        const title = document.getElementById('sports-modal-title');
+        const saveBtn = document.getElementById('sports-save-btn');
+        const youth = youthId ? getYouthById(youthId) : null;
+
+        if (youth) {
+            const sportsData = getYouthSportsData(youth);
+            document.getElementById('sports-entry-id').value = youth.id;
+            document.getElementById('sports-entry-name').value = youth.name || '';
+            document.getElementById('sports-entry-birthdate').value = getYouthBirthdate(youth);
+            document.getElementById('sports-entry-sex').value = getYouthSex(youth);
+            document.getElementById('sports-entry-purok').value = getYouthPurok(youth);
+            document.getElementById('sports-entry-other').value = sportsData.other;
+            applySportsSelections(sportsData.preferences);
+            applySportsCompetitionLevels(sportsData.competitionLevels);
+            if (title) title.textContent = 'Edit Sports Entry';
+            if (saveBtn) saveBtn.textContent = 'Update Sports Entry';
+        } else {
+            if (title) title.textContent = 'Add Sports Entry';
+            if (saveBtn) saveBtn.textContent = 'Save Sports Entry';
+        }
+
+        syncSportsEntryBarangaySelect();
+        getSportsEntryModal()?.show();
+    }
+
+    function buildSportsPayload(existingYouth, formData) {
+        const baseDetails = existingYouth?.full_data || {};
+        return {
+            id: existingYouth ? Number(existingYouth.id) : undefined,
+            name: formData.name,
+            birthdate: formData.birthdate,
+            sex: formData.sex,
+            barangay_id: Number(formData.barangayId),
+            civil_status: normalizeText(baseDetails.civil_status),
+            religion: normalizeText(baseDetails.religion),
+            purok: formData.purok,
+            email: normalizeText(baseDetails.email),
+            contact_number: normalizeText(baseDetails.contact_number),
+            is_in_school: !!baseDetails.is_in_school,
+            is_osy: !!baseDetails.is_osy,
+            osy_willing_to_enroll: !!baseDetails.osy_willing_to_enroll,
+            osy_program_type: normalizeText(baseDetails.osy_program_type),
+            osy_reason_no_enroll: normalizeText(baseDetails.osy_reason_no_enroll),
+            is_working_youth: !!baseDetails.is_working_youth,
+            is_unemployed_youth: !!(baseDetails.is_unemployed_youth ?? baseDetails.is_unemployed),
+            is_pwd: !!baseDetails.is_pwd,
+            disability_type: normalizeText(baseDetails.disability_type),
+            has_specific_needs: !!baseDetails.has_specific_needs,
+            specific_needs_condition: normalizeText(baseDetails.specific_needs_condition),
+            is_ip: !!baseDetails.is_ip,
+            tribe_name: normalizeText(baseDetails.tribe_name),
+            is_muslim: !!baseDetails.is_muslim,
+            muslim_group: normalizeText(baseDetails.muslim_group),
+            education_level: normalizeText(existingYouth?.education_level || baseDetails.education_level),
+            course: normalizeText(baseDetails.course),
+            school_name: normalizeText(baseDetails.school_name),
+            is_scholar: !!baseDetails.is_scholar,
+            scholarship_program: normalizeText(baseDetails.scholarship_program),
+            work_status: normalizeText(baseDetails.work_status),
+            sports_preferences: formData.sportsPreferences,
+            sports_competition_levels: formData.sportsCompetitionLevels,
+            talent_preferences: Array.isArray(baseDetails.talent_preferences) ? baseDetails.talent_preferences : [],
+            sports_preference_other: formData.sportsOther,
+            talent_preference_other: normalizeText(baseDetails.talent_preference_other),
+            registered_voter_sk: !!baseDetails.registered_voter_sk,
+            registered_voter_national: !!baseDetails.registered_voter_national,
+            is_non_voter: !!baseDetails.is_non_voter,
+            voted_last_sk: !!baseDetails.voted_last_sk,
+            attended_kk_assembly: !!baseDetails.attended_kk_assembly,
+            kk_assembly_times: Number(baseDetails.kk_assembly_times || 0),
+            kk_assembly_no_reason: normalizeText(baseDetails.kk_assembly_no_reason),
+            is_4ps: !!baseDetails.is_4ps,
+            number_of_children: Number(baseDetails.number_of_children || 0)
+        };
+    }
+
+    function openDeleteSportsModal(youthId) {
+        const youth = getYouthById(youthId);
+        if (!youth) {
+            showSportsFeedback('That youth record could not be found anymore.', 'error');
+            return;
+        }
+
+        const sportsData = getYouthSportsData(youth);
+        if (!sportsData.preferences.length && !sportsData.other && !sportsData.competitionLevels.length) {
+            showSportsFeedback('This youth record does not have saved sports information yet.', 'error');
+            return;
+        }
+
+        const barangay = findBarangayById(youth.barangay_id);
+        const summaryParts = [];
+        if (sportsData.preferences.length) {
+            summaryParts.push(`${sportsData.preferences.length} sport${sportsData.preferences.length === 1 ? '' : 's'} selected`);
+        }
+        if (sportsData.other) {
+            summaryParts.push('custom other sport saved');
+        }
+        if (sportsData.competitionLevels.length) {
+            summaryParts.push(`${sportsData.competitionLevels.length} competition level${sportsData.competitionLevels.length === 1 ? '' : 's'}`);
+        }
+
+        const name = document.getElementById('sports-delete-name');
+        const barangayLabel = document.getElementById('sports-delete-barangay');
+        const summaryLabel = document.getElementById('sports-delete-summary');
+        const copy = document.getElementById('sports-delete-copy');
+        const confirmBtn = document.getElementById('sports-delete-confirm-btn');
+
+        if (name) name.textContent = normalizeText(youth.name) || 'Unnamed youth';
+        if (barangayLabel) barangayLabel.textContent = barangay ? `Barangay ${barangay.name}` : 'Barangay not available';
+        if (summaryLabel) summaryLabel.textContent = summaryParts.join(' | ') || 'Sports information saved';
+        if (copy) {
+            copy.textContent = `This will remove the sports information saved for ${normalizeText(youth.name) || 'this youth'}, while keeping the youth record in the current barangay folder.`;
+        }
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = `
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 6h18"/>
+                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+                    <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/>
+                </svg>
+                Delete Sports Info
+            `;
+        }
+
+        sportsDeleteTargetId = Number(youthId);
+        getSportsDeleteModal()?.show();
+    }
+
+    async function confirmDeleteSportsInfo() {
+        if (!sportsDeleteTargetId) return;
+
+        const youth = getYouthById(sportsDeleteTargetId);
+        if (!youth) {
+            getSportsDeleteModal()?.hide();
+            sportsDeleteTargetId = null;
+            showSportsFeedback('That youth record could not be found anymore.', 'error');
+            return;
+        }
+
+        const confirmBtn = document.getElementById('sports-delete-confirm-btn');
+        const originalMarkup = confirmBtn ? confirmBtn.innerHTML : '';
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Deleting...';
+        }
+
+        const payload = buildSportsPayload(youth, {
+            barangayId: Number(youth.barangay_id),
+            name: normalizeText(youth.name),
+            birthdate: getYouthBirthdate(youth),
+            sex: getYouthSex(youth),
+            purok: getYouthPurok(youth),
+            sportsPreferences: [],
+            sportsCompetitionLevels: [],
+            sportsOther: ''
+        });
+
+        try {
+            const response = await fetch('/api/youth/', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const raw = await response.text();
+            let data = {};
+            try {
+                data = raw ? JSON.parse(raw) : {};
+            } catch (error) {
+                data = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Could not delete the sports information right now.');
+            }
+
+            getSportsDeleteModal()?.hide();
+            sportsDeleteTargetId = null;
+            await refreshSportsDashboardData();
+            selectSportsBarangay(Number(youth.barangay_id), false);
+            showSportsFeedback('Sports information deleted successfully.');
+        } catch (error) {
+            showSportsFeedback(error.message || 'Could not delete the sports information right now.', 'error');
+        } finally {
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = originalMarkup || 'Delete Sports Info';
+            }
+        }
+    }
+
+    async function saveSportsEntry(event) {
+        event.preventDefault();
+        clearSportsModalAlert();
+
+        const youthId = Number(document.getElementById('sports-entry-id').value || 0) || null;
+        const existingYouth = youthId ? getYouthById(youthId) : null;
+        const barangayId = Number(sportsDashboardState.selectedBarangayId || 0);
+        const name = normalizeText(document.getElementById('sports-entry-name').value);
+        const birthdate = normalizeText(document.getElementById('sports-entry-birthdate').value);
+        const sex = normalizeText(document.getElementById('sports-entry-sex').value);
+        const purok = normalizeText(document.getElementById('sports-entry-purok').value);
+        const sportsPreferences = collectSportsSelections();
+        const sportsCompetitionLevels = collectSportsCompetitionLevels();
+        const sportsOther = normalizeText(document.getElementById('sports-entry-other').value);
+
+        if (!barangayId) {
+            setSportsModalAlert('Select a barangay folder before saving a sports entry.');
+            return;
+        }
+        if (!name) {
+            setSportsModalAlert('Youth name is required.');
+            return;
+        }
+        if (!birthdate) {
+            setSportsModalAlert('Birthdate is required.');
+            return;
+        }
+        const age = getYouthAgeFromBirthdate(birthdate);
+        if (age == null) {
+            setSportsModalAlert('Birthdate is invalid.');
+            return;
+        }
+        if (age >= 31) {
+            setSportsModalAlert(`This person is already ${age} years old. The system only allows youth records for ages 30 and below.`);
+            return;
+        }
+        if (!sex) {
+            setSportsModalAlert('Sex is required.');
+            return;
+        }
+        if (!sportsPreferences.length && !sportsOther && !sportsCompetitionLevels.length) {
+            setSportsModalAlert('Select at least one sports preference, provide an Other Sport entry, or choose a sports competition level.');
+            return;
+        }
+
+        const payload = buildSportsPayload(existingYouth, {
+            barangayId,
+            name,
+            birthdate,
+            sex,
+            purok,
+            sportsPreferences,
+            sportsCompetitionLevels,
+            sportsOther
+        });
+
+        const saveBtn = document.getElementById('sports-save-btn');
+        const originalLabel = saveBtn ? saveBtn.textContent : '';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+        }
+
+        try {
+            const response = await fetch('/api/youth/', {
+                method: existingYouth ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const raw = await response.text();
+            let data = {};
+            try {
+                data = raw ? JSON.parse(raw) : {};
+            } catch (error) {
+                data = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Could not save the sports entry right now.');
+            }
+
+            getSportsEntryModal()?.hide();
+            await refreshSportsDashboardData();
+            selectSportsBarangay(barangayId, false);
+            showSportsFeedback(existingYouth ? 'Sports preference updated successfully.' : 'Sports entry added successfully.');
+        } catch (error) {
+            setSportsModalAlert(error.message || 'Could not save the sports entry right now.');
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalLabel || 'Save Sports Entry';
+            }
+        }
+    }
+
+    async function initializeProtectedNav() {
+        try {
+            const response = await fetch('/api/user/');
+            const data = response.ok ? await response.json() : null;
+            if (!data || !data.is_authenticated) {
+                window.location.href = '/login/';
+                return false;
+            }
+
+            const userDisplay = document.getElementById('user-display');
+            const usernameSpan = document.getElementById('username-span');
+            const accountLabel = document.getElementById('account-label');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if (userDisplay) userDisplay.style.display = 'block';
+            if (usernameSpan) {
+                usernameSpan.innerText = data.barangay_name && !data.is_admin
+                    ? `${data.username} (${data.barangay_name})`
+                    : data.username;
+            }
+            if (accountLabel) accountLabel.innerText = data.is_admin ? 'Admin' : 'Account';
+            if (logoutBtn) logoutBtn.style.display = 'block';
+            document.querySelectorAll('.system-admin-only').forEach(el => {
+                el.style.display = data.is_admin ? '' : 'none';
+            });
+            sportsDashboardState.currentUser = data;
+            return true;
+        } catch (error) {
+            console.warn('Could not verify current user:', error);
+            window.location.href = '/login/';
+            return false;
+        }
+    }
+
+    function getDefaultBarangaySelection() {
+        if (sportsDashboardState.currentUser?.barangay_id) {
+            return Number(sportsDashboardState.currentUser.barangay_id);
+        }
+        return Number(sportsDashboardState.barangays[0]?.id || 0) || null;
+    }
+
+    async function refreshSportsDashboardData() {
+        const response = await fetch('/api/youth/', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to refresh youth data');
+        sportsDashboardState.youths = await response.json();
+        aggregateSports();
+        renderTopStats();
+        renderPopularSports();
+        renderBarangayGrid();
+        renderSportsYouthList();
+    }
+
+    async function initSportsDashboard() {
+        try {
+            const [barangayResponse, youthResponse] = await Promise.all([
+                fetch('/api/barangays/', { cache: 'no-store' }),
+                fetch('/api/youth/', { cache: 'no-store' })
+            ]);
+
+            if (!barangayResponse.ok || !youthResponse.ok) {
+                throw new Error('Failed to load sports dashboard data');
+            }
+
+            sportsDashboardState.barangays = await barangayResponse.json();
+            sportsDashboardState.youths = await youthResponse.json();
+            sportsDashboardState.selectedBarangayId = getDefaultBarangaySelection();
+
+            syncSportsEntryBarangaySelect();
+            aggregateSports();
+            renderTopStats();
+            renderPopularSports();
+            renderBarangayGrid();
+            renderSportsYouthList();
+        } catch (error) {
+            console.warn('Could not load sports dashboard data:', error);
+            const sub = document.getElementById('sports-page-sub');
+            if (sub) sub.textContent = 'The sports dashboard could not load right now. Please refresh and try again.';
+            const grid = document.getElementById('barangay-grid');
+            if (grid) grid.innerHTML = '';
+            const empty = document.getElementById('sports-dashboard-empty');
+            if (empty) {
+                empty.style.display = 'block';
+                empty.textContent = 'Could not load sports dashboard data right now.';
+            }
+            renderSportsYouthList();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        renderSportsPreferenceOptions();
+        renderSportsCompetitionOptions();
+        syncSportsEntryBarangaySelect();
+        document.getElementById('sportsPreferenceForm')?.addEventListener('submit', saveSportsEntry);
+        document.getElementById('sportsDeleteModal')?.addEventListener('hidden.bs.modal', () => {
+            sportsDeleteTargetId = null;
+            const confirmBtn = document.getElementById('sports-delete-confirm-btn');
+            if (!confirmBtn) return;
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = `
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 6h18"/>
+                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+                    <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/>
+                </svg>
+                Delete Sports Info
+            `;
+        });
+
+        const ready = await initializeProtectedNav();
+        if (!ready) return;
+        initSportsDashboard();
+    });
+</script>
+
+</body>
+</html>

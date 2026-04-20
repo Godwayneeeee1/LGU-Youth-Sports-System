@@ -153,28 +153,157 @@ def talent_sports_map_page(request):
     return render(request, 'talentsport.html')
 
 
-SPORT_PREFERENCE_OPTIONS = [
+def sport_dashboard_page(request):
+    """Sports-focused dashboard page."""
+    if not request.user.is_authenticated:
+        return redirect('login_page')
+    return render(request, 'sportdashboard.html')
+
+
+def sport_report_page(request):
+    """Sports report page with admin and barangay-scoped output."""
+    if not request.user.is_authenticated:
+        return redirect('login_page')
+    return render(request, 'sportreport.html')
+
+
+SPORT_PREFERENCE_OPTIONS = sorted([
+    'Adventure Racing',
+    'Aerobics',
+    'Archery',
     'Arnis',
+    'Arm Wrestling',
+    'Athletics',
+    'Auto Racing',
     'Badminton',
     'Baseball',
     'Basketball',
     'Billiards',
     'BJJ',
+    'Bobsleigh',
+    'Bowling',
     'Boxing',
+    'Canoeing',
     'Chess',
+    'Climbing',
+    'Cricket',
+    'CrossFit',
+    'Curling',
+    'Cycling',
+    'Darts',
+    'Disc Golf',
+    'Diving',
+    'Dodgeball',
+    'Dragon Boat Racing',
     'E-Sports',
+    'Endurance Running',
+    'Equestrian',
+    'Extreme Sports',
+    'Fencing',
+    'Figure Skating',
+    'Floorball',
     'Football',
+    'Freestyle Skiing',
+    'Gaelic Football',
+    'Gliding',
+    'Go-Karting',
+    'Golf',
     'Gymnastics',
+    'Handball',
+    'Hang Gliding',
+    'Hockey (Field/Ice)',
+    'Horse Racing',
+    'Hurling',
+    'Ice Hockey',
+    'Ice Skating',
+    'Indoor Volleyball',
+    'Jai Alai',
+    'Javelin',
+    'Jet Skiing',
+    'Judo',
+    'Jump Rope',
     'Karate',
+    'Kayaking',
+    'Kickboxing',
+    'Kiteboarding',
+    'Korfball',
+    'Lacrosse',
+    'Lawn Bowls',
+    'Log Rolling',
+    'Long Jump',
+    'Luge',
     'Martial Arts',
+    'Mixed Martial Arts (MMA)',
+    'Modern Pentathlon',
+    'Motocross',
+    'Mountain Biking',
+    'Netball',
+    'Ninja Warrior Competitions',
+    'Novuss',
+    'Octopush (Underwater Hockey)',
+    'Olympic Weightlifting',
+    'Orienteering',
+    'Padel',
+    'Paintball',
+    'Parkour',
     'Pickleball',
+    'Polo',
+    'Powerlifting',
+    'Qianball',
+    'Quad Biking',
+    'Quidditch (Muggle Version)',
+    'Racquetball',
+    'Rock Climbing',
+    'Roller Derby',
+    'Rowing',
+    'Rugby',
+    'Sepak Takraw',
+    'Skateboarding',
+    'Skiing',
     'Soccer',
     'Softball',
+    'Squash',
+    'Surfing',
     'Swimming',
+    'Table Tennis',
     'Taekwondo',
     'Tennis',
     'Track and Field',
+    'Track Cycling',
+    'Triathlon',
+    'Ultimate Frisbee',
+    'Ultrarunning',
+    'Underwater Hockey',
+    'Unicycling',
+    'Vaulting',
+    'Vertical Running',
+    'Voivinam',
     'Volleyball',
+    'Wakeboarding',
+    'Water Polo',
+    'Weightlifting',
+    'Windsurfing',
+    'Wrestling',
+    'X-Country Skiing',
+    'Xare (Basque Racket Sport)',
+    'Xtreme Sports',
+    'Yachting',
+    'Yak Polo',
+    'Yoga (Competitive)',
+    'Youth Athletics',
+    'Zen Archery',
+    'Zipline Racing',
+    'Zorb Football',
+    'Zorbing',
+], key=str.casefold)
+
+SPORT_COMPETITION_LEVEL_OPTIONS = [
+    'Intramurals',
+    'District Meet',
+    'Division Meets',
+    'Regional Meets',
+    'Palarong Pambansa',
+    'International Meets',
 ]
 
 TALENT_PREFERENCE_OPTIONS = [
@@ -215,6 +344,7 @@ def _build_blank_form_context(barangay_name):
         'specific_needs_options': _choice_labels('specific_needs_condition'),
         'kk_no_reason_options': _choice_labels('kk_assembly_no_reason'),
         'sports_preference_options': sorted(SPORT_PREFERENCE_OPTIONS, key=str.casefold),
+        'sports_competition_level_options': SPORT_COMPETITION_LEVEL_OPTIONS,
         'talent_preference_options': sorted(TALENT_PREFERENCE_OPTIONS, key=str.casefold),
     }
 
@@ -441,6 +571,154 @@ def _talent_sports_scope_label(user):
         return 'All Barangays'
     assigned = _assigned_barangay(user)
     return assigned.name if assigned else 'Assigned Barangay'
+
+
+def _sports_competition_scope_label(user):
+    if _is_system_admin(user):
+        return 'All Barangays'
+    assigned = _assigned_barangay(user)
+    return assigned.name if assigned else 'Assigned Barangay'
+
+
+def _get_sports_competition_level_rows_for_user(user):
+    youths = Youth.objects.select_related('barangay').all()
+    if not _is_system_admin(user):
+        assigned = _assigned_barangay(user)
+        if not assigned:
+            return [], _sports_competition_scope_label(user)
+        youths = youths.filter(barangay=assigned)
+
+    rows = []
+    for youth in youths.order_by('barangay__name', 'name'):
+        levels = _parse_preference_list(youth.sports_competition_levels, SPORT_COMPETITION_LEVEL_OPTIONS)
+        if not levels:
+            continue
+
+        sports = _parse_preference_list(youth.sports_preferences, SPORT_PREFERENCE_OPTIONS)
+        sports_labels = list(sports)
+        if (youth.sports_preference_other or '').strip():
+            sports_labels.append(f"Other: {youth.sports_preference_other.strip()}")
+
+        rows.append({
+            'name': youth.name,
+            'barangay': youth.barangay.name,
+            'sports': ', '.join(sports_labels) if sports_labels else 'No sport listed',
+            'levels': ', '.join(levels),
+        })
+
+    return rows, _sports_competition_scope_label(user)
+
+
+def _build_sports_competition_levels_pdf(user):
+    rows, scope_label = _get_sports_competition_level_rows_for_user(user)
+    is_admin = _is_system_admin(user)
+    pdf = _SimplePdf()
+
+    if is_admin:
+        columns = [
+            ('#', 24),
+            ('Youth Name', 150),
+            ('Barangay', 110),
+            ('Sports', 136),
+            ('Competition Levels', 115),
+        ]
+    else:
+        columns = [
+            ('#', 24),
+            ('Youth Name', 168),
+            ('Sports', 168),
+            ('Competition Levels', 175),
+        ]
+
+    available_height = 690
+    row_gap = 8
+    body_font = 8.6
+    line_leading = 11
+
+    def build_row_payload(index, row):
+        payload = [
+            str(index),
+            row['name'],
+        ]
+        if is_admin:
+            payload.append(row['barangay'])
+        payload.extend([row['sports'], row['levels']])
+        return payload
+
+    def measure_row(index, row):
+        values = build_row_payload(index, row)
+        max_lines = 1
+        for (header, width), value in zip(columns, values):
+            text_width = max(8, width - 8)
+            lines = _wrap_pdf_text(value, text_width, body_font)
+            max_lines = max(max_lines, len(lines))
+        return max(24, 10 + (max_lines * line_leading))
+
+    paged_rows = []
+    current_page = []
+    current_height = 0
+    for index, row in enumerate(rows, start=1):
+        row_height = measure_row(index, row)
+        if current_page and (current_height + row_height + row_gap) > available_height:
+            paged_rows.append(current_page)
+            current_page = []
+            current_height = 0
+        current_page.append((index, row, row_height))
+        current_height += row_height + row_gap
+    if current_page or not rows:
+        paged_rows.append(current_page)
+
+    total_pages = len(paged_rows)
+
+    for page_index, page_rows in enumerate(paged_rows, start=1):
+        pdf.add_page()
+        top = 28
+        left = 30
+        right = pdf.page_width - 30
+
+        pdf.text(left, pdf.page_height - top - 18, 'Youth With Sports Competition Levels', size=17, bold=True, color=(0.10, 0.22, 0.44))
+        pdf.text(left, pdf.page_height - top - 36, f'Scope: {scope_label}', size=9.2, bold=True, color=(0.28, 0.35, 0.46))
+        pdf.text(
+            right - 130,
+            pdf.page_height - top - 36,
+            f'Page {page_index} of {total_pages}',
+            size=8.6,
+            color=(0.45, 0.52, 0.62),
+        )
+        pdf.line(left, pdf.page_height - 58, right, pdf.page_height - 58, width=1.0, color=(0.10, 0.22, 0.44))
+        pdf.text(left, pdf.page_height - 72, 'This report lists the youth records that have saved sports competition levels.', size=8.4, color=(0.45, 0.52, 0.62))
+
+        top = 92
+        current_x = left
+        for header, width in columns:
+            pdf.rect(current_x, pdf.page_height - top - 16, width, 18, stroke=(0.75, 0.81, 0.90), fill=(0.94, 0.96, 1.0), line_width=0.7)
+            pdf.text(current_x + 4, pdf.page_height - top - 12, header, size=8.1, bold=True, color=(0.21, 0.32, 0.51))
+            current_x += width
+
+        top += 24
+        if not rows:
+            pdf.text(left, pdf.page_height - top - 8, 'No youth records with sports competition levels are available for this scope.', size=10, color=(0.42, 0.49, 0.60))
+            continue
+
+        for index, row, row_height in page_rows:
+            current_x = left
+            values = build_row_payload(index, row)
+            for (header, width), value in zip(columns, values):
+                pdf.rect(current_x, pdf.page_height - top - row_height + 4, width, row_height, stroke=(0.86, 0.90, 0.95), line_width=0.6)
+                lines = _wrap_pdf_text(value, max(8, width - 8), body_font)
+                for line_index, line in enumerate(lines):
+                    pdf.text(
+                        current_x + 4,
+                        pdf.page_height - top - 10 - (line_index * line_leading),
+                        line,
+                        size=body_font,
+                        bold=(header == 'Youth Name'),
+                        color=(0.12, 0.18, 0.29),
+                    )
+                current_x += width
+            top += row_height + row_gap
+
+    return pdf.build()
 
 
 def _pdf_safe_text(value):
@@ -772,6 +1050,20 @@ def _draw_line_field(pdf, x, top, width, label, line_y_offset=28):
     return top + line_y_offset + 12
 
 
+def _draw_multiline_field(pdf, x, top, width, height, label, lines=4):
+    pdf.text(x, pdf.page_height - top - 9, label, size=8.5, bold=True, color=(0.26, 0.34, 0.47))
+    box_top = top + 16
+    pdf.rect(x, pdf.page_height - box_top - height, width, height, stroke=(0.77, 0.83, 0.91), line_width=0.8)
+    inner_left = x + 8
+    inner_right = x + width - 8
+    line_gap = height / max(lines, 1)
+    for line_index in range(lines):
+        line_top = box_top + ((line_index + 1) * line_gap) - 7
+        y = pdf.page_height - line_top
+        pdf.line(inner_left, y, inner_right, y, width=0.5, color=(0.86, 0.90, 0.95))
+    return box_top + height + 10
+
+
 def _draw_checkbox_item(pdf, x, top, label, max_width, size=9.5):
     box_size = 9
     rect_y = pdf.page_height - top - box_size - 1
@@ -804,6 +1096,7 @@ def _draw_page_header(pdf, barangay_name, page_number, total_pages, include_logo
     left = 36
     right = pdf.page_width - 36
     top = 28
+    footer_y = 14
     title_x = left
     if include_logo and _LYDO_LOGO_PATH.exists():
         try:
@@ -811,18 +1104,18 @@ def _draw_page_header(pdf, barangay_name, page_number, total_pages, include_logo
             title_x += 48
         except (OSError, ValueError):
             title_x = left
-    pdf.text(title_x, pdf.page_height - top - 18, "LYDO Youth Profile Form", size=18, bold=True, color=(0.10, 0.22, 0.44))
+    pdf.text(title_x, pdf.page_height - top - 16, "LGU Youth & Sports Youth Profile Form", size=16.5, bold=True, color=(0.10, 0.22, 0.44))
     pdf.text(
-        right - 145,
-        pdf.page_height - top - 10,
+        right - 120,
+        pdf.page_height - top - 28,
         f"Barangay: {barangay_name}",
-        size=9,
+        size=8.2,
         bold=True,
         color=(0.28, 0.35, 0.46),
     )
     pdf.line(left, pdf.page_height - 56, right, pdf.page_height - 56, width=1.1, color=(0.10, 0.22, 0.44))
-    pdf.text(left, 20, "Copyright (c) 2026 LYDO Office. All rights reserved.", size=7.5, color=(0.45, 0.52, 0.62))
-    pdf.text(right - 56, 20, f"Page {page_number} of {total_pages}", size=8.5, color=(0.45, 0.52, 0.62))
+    pdf.text(left, footer_y, "LGU Youth & Sports", size=7.5, color=(0.45, 0.52, 0.62))
+    pdf.text(right - 56, footer_y, f"Page {page_number} of {total_pages}", size=8.5, color=(0.45, 0.52, 0.62))
 
 
 def _draw_section_banner(pdf, top, title):
@@ -1107,9 +1400,9 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         left_x,
         preference_top,
         half_width,
-        "Talent / Sports Preference - Sports",
-        context['sports_preference_options'],
-        columns=3,
+        "Talent / Sports Preference - Talents",
+        context['talent_preference_options'],
+        columns=2,
         size=6.9,
         row_gap=2,
         col_gap=8,
@@ -1119,19 +1412,20 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         left_x,
         preference_bottom_left + 2,
         half_width,
-        "Other Sports Preference",
+        "Other Talent Preference",
         line_y_offset=24,
     )
+    right_pref_top = preference_top
     preference_bottom_right = _draw_checkbox_list(
         pdf,
         right_x,
-        preference_top,
+        right_pref_top,
         half_width,
-        "Talent / Sports Preference - Talents",
-        context['talent_preference_options'],
+        "Levels of Sports Competition Played",
+        context['sports_competition_level_options'],
         columns=2,
-        size=6.9,
-        row_gap=2,
+        size=7.8,
+        row_gap=3,
         col_gap=8,
     )
     preference_bottom_right = _draw_line_field(
@@ -1139,16 +1433,42 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         right_x,
         preference_bottom_right + 2,
         half_width,
-        "Other Talent Preference",
+        "Other Sports / Competition Notes",
         line_y_offset=24,
     )
-    signature_top = max(preference_bottom_left, preference_bottom_right) + 24 + 56
-    signature_top = min(signature_top, pdf.page_height - 88)
-    signature_top = max(signature_top, max(preference_bottom_left, preference_bottom_right) + 24)
-    pdf.line(left_x, pdf.page_height - signature_top, left_x + half_width - 10, pdf.page_height - signature_top, width=0.8, color=(0.35, 0.42, 0.55))
-    pdf.line(right_x, pdf.page_height - signature_top, right_x + half_width - 10, pdf.page_height - signature_top, width=0.8, color=(0.35, 0.42, 0.55))
-    pdf.text(left_x + 50, pdf.page_height - signature_top - 16, "Signature of Youth Respondent", size=9, color=(0.33, 0.40, 0.50))
-    pdf.text(right_x + 30, pdf.page_height - signature_top - 16, "Signature of Encoder/ LYDO Officer", size=9, color=(0.33, 0.40, 0.50))
+    sports_write_top = max(preference_bottom_left, preference_bottom_right) + 14
+    sports_write_bottom = _draw_multiline_field(
+        pdf,
+        left_x,
+        sports_write_top,
+        content_width,
+        96,
+        "Sports Preference(s) / Write chosen sport(s)",
+        lines=5,
+    )
+    signature_top = max(sports_write_bottom + 24, pdf.page_height - 156)
+    signature_line_y = pdf.page_height - signature_top
+    label_top = signature_top - 26
+    pdf.line(left_x, signature_line_y, left_x + half_width - 10, signature_line_y, width=0.8, color=(0.35, 0.42, 0.55))
+    pdf.line(right_x, signature_line_y, right_x + half_width - 10, signature_line_y, width=0.8, color=(0.35, 0.42, 0.55))
+    _draw_wrapped_text(
+        pdf,
+        left_x + 18,
+        label_top,
+        "Signature of Youth Respondent",
+        half_width - 36,
+        size=8.8,
+        color=(0.33, 0.40, 0.50),
+    )
+    _draw_wrapped_text(
+        pdf,
+        right_x + 18,
+        label_top,
+        "Signature of Encoder / LGU Youth & Sports Officer",
+        half_width - 36,
+        size=8.0,
+        color=(0.33, 0.40, 0.50),
+    )
 
     return pdf.build()
 
@@ -1856,6 +2176,19 @@ def talent_sports_map_api(request):
     })
 
 
+def sports_competition_levels_pdf_api(request):
+    """Download a scoped PDF report for youth with saved sports competition levels."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized. Please login.'}, status=401)
+    _purge_aged_out_youths()
+
+    pdf_bytes = _build_sports_competition_levels_pdf(request.user)
+    scope_name = _safe_export_name(_sports_competition_scope_label(request.user))
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="sports_competition_levels_{scope_name}.pdf"'
+    return response
+
+
 def unemployed_heatmap_api(request):
     """Return unemployed youth data for heatmap views."""
     """Backward-compatible alias for the heatmap API."""
@@ -1932,6 +2265,7 @@ def youth_api(request):
                     'work_status':              y.work_status,
                     'sports_preferences':       _parse_preference_list(y.sports_preferences, SPORT_PREFERENCE_OPTIONS),
                     'talent_preferences':       _parse_preference_list(y.talent_preferences, TALENT_PREFERENCE_OPTIONS),
+                    'sports_competition_levels': _parse_preference_list(y.sports_competition_levels, SPORT_COMPETITION_LEVEL_OPTIONS),
                     'sports_preference_other':  y.sports_preference_other,
                     'talent_preference_other':  y.talent_preference_other,
                     'registered_voter_sk':      y.registered_voter_sk,
@@ -2015,6 +2349,10 @@ def youth_api(request):
                 data.get('talent_preferences', []),
                 TALENT_PREFERENCE_OPTIONS,
             )
+            sports_competition_levels = _serialize_preference_list(
+                data.get('sports_competition_levels', []),
+                SPORT_COMPETITION_LEVEL_OPTIONS,
+            )
             sports_preference_other = str(data.get('sports_preference_other') or '').strip()
             talent_preference_other = str(data.get('talent_preference_other') or '').strip()
 
@@ -2058,6 +2396,7 @@ def youth_api(request):
                 'work_status':      data.get('work_status'),
                 'sports_preferences': sports_preferences,
                 'talent_preferences': talent_preferences,
+                'sports_competition_levels': sports_competition_levels,
                 'sports_preference_other': sports_preference_other,
                 'talent_preference_other': talent_preference_other,
                 'registered_voter_sk':      registered_voter_sk,

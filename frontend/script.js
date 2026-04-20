@@ -13,6 +13,8 @@ let ADMIN_ACCOUNT_ROWS = [];
 let ADMIN_ACCOUNT_MODAL = null;
 let TRANSFER_CONFIRM_MODAL = null;
 let TRANSFER_CONFIRM_RESOLVER = null;
+let DELETE_CONFIRM_MODAL = null;
+let DELETE_CONFIRM_RESOLVER = null;
 const YOUTH_MODAL_DRAFT_STORAGE_PREFIX = 'lydo-youth-modal-draft';
 
 // Page boot sequence is driven by DOMContentLoaded in this file.
@@ -27,28 +29,134 @@ const YOUTH_BARANGAY_MOVE_GROUPS = [
 ];
 
 const SPORT_PREFERENCE_OPTIONS = [
+	'Adventure Racing',
+	'Aerobics',
+	'Archery',
 	'Arnis',
+	'Arm Wrestling',
+	'Athletics',
+	'Auto Racing',
 	'Badminton',
 	'Baseball',
 	'Basketball',
 	'Billiards',
 	'BJJ',
+	'Bobsleigh',
+	'Bowling',
 	'Boxing',
+	'Canoeing',
 	'Chess',
+	'Climbing',
+	'Cricket',
+	'CrossFit',
+	'Curling',
+	'Cycling',
+	'Darts',
+	'Disc Golf',
+	'Diving',
+	'Dodgeball',
+	'Dragon Boat Racing',
 	'E-Sports',
+	'Endurance Running',
+	'Equestrian',
+	'Extreme Sports',
+	'Fencing',
+	'Figure Skating',
+	'Floorball',
 	'Football',
+	'Freestyle Skiing',
+	'Gaelic Football',
+	'Gliding',
+	'Go-Karting',
+	'Golf',
 	'Gymnastics',
+	'Handball',
+	'Hang Gliding',
+	'Hockey (Field/Ice)',
+	'Horse Racing',
+	'Hurling',
+	'Ice Hockey',
+	'Ice Skating',
+	'Indoor Volleyball',
+	'Jai Alai',
+	'Javelin',
+	'Jet Skiing',
+	'Judo',
+	'Jump Rope',
 	'Karate',
+	'Kayaking',
+	'Kickboxing',
+	'Kiteboarding',
+	'Korfball',
+	'Lacrosse',
+	'Lawn Bowls',
+	'Log Rolling',
+	'Long Jump',
+	'Luge',
 	'Martial Arts',
+	'Mixed Martial Arts (MMA)',
+	'Modern Pentathlon',
+	'Motocross',
+	'Mountain Biking',
+	'Netball',
+	'Ninja Warrior Competitions',
+	'Novuss',
+	'Octopush (Underwater Hockey)',
+	'Olympic Weightlifting',
+	'Orienteering',
+	'Padel',
+	'Paintball',
+	'Parkour',
 	'Pickleball',
+	'Polo',
+	'Powerlifting',
+	'Qianball',
+	'Quad Biking',
+	'Quidditch (Muggle Version)',
+	'Racquetball',
+	'Rock Climbing',
+	'Roller Derby',
+	'Rowing',
+	'Rugby',
+	'Sepak Takraw',
+	'Skateboarding',
+	'Skiing',
 	'Soccer',
 	'Softball',
+	'Squash',
+	'Surfing',
 	'Swimming',
+	'Table Tennis',
 	'Taekwondo',
 	'Tennis',
 	'Track and Field',
+	'Track Cycling',
+	'Triathlon',
+	'Ultimate Frisbee',
+	'Ultrarunning',
+	'Underwater Hockey',
+	'Unicycling',
+	'Vaulting',
+	'Vertical Running',
+	'Voivinam',
 	'Volleyball',
-];
+	'Wakeboarding',
+	'Water Polo',
+	'Weightlifting',
+	'Windsurfing',
+	'Wrestling',
+	'X-Country Skiing',
+	'Xare (Basque Racket Sport)',
+	'Xtreme Sports',
+	'Yachting',
+	'Yak Polo',
+	'Yoga (Competitive)',
+	'Youth Athletics',
+	'Zen Archery',
+	'Zipline Racing',
+	'Zorb Football',
+	'Zorbing'
+].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
 const TALENT_PREFERENCE_OPTIONS = [
 	'Acting / Drama',
@@ -320,6 +428,9 @@ function getSpecialCountEntries(data) {
 		['IP Male', data.ip_male ?? 0],
 		['IP Female', data.ip_female ?? 0],
 		['IP (Total)', data.ip ?? ((data.ip_male ?? 0) + (data.ip_female ?? 0))],
+		['Muslim Male', data.muslim_male ?? 0],
+		['Muslim Female', data.muslim_female ?? 0],
+		['Muslim (Total)', data.muslim ?? ((data.muslim_male ?? 0) + (data.muslim_female ?? 0))],
 		['OSY Male', data.osy_male ?? 0],
 		['OSY Female', data.osy_female ?? 0],
 		['OSY (Total)', (data.osy != null) ? data.osy : ((data.osy_male ?? 0) + (data.osy_female ?? 0))],
@@ -390,6 +501,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	initAdminBarangayDropdown();
 	initYouthBarangayDropdown();
 	initTransferConfirmModal();
+	initDeleteConfirmModal();
 	renderPreferenceCheckboxGroup('sports-preference-options', 'sport-pref', SPORT_PREFERENCE_OPTIONS);
 	renderPreferenceCheckboxGroup('talent-preference-options', 'talent-pref', TALENT_PREFERENCE_OPTIONS);
 
@@ -636,43 +748,78 @@ function viewBarangaySummary() {
 	fetchBarangaySummary(currentBarangayId).then(data => {
 		const content = document.getElementById('summary-content');
 		const specialCountItems = getSpecialCountEntries(data)
-			.map(([label, value]) => `<li>${label}: <strong>${value}</strong></li>`)
+			.map(([label, value]) => `
+				<div style="min-width:170px;flex:1 1 180px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);box-shadow:0 10px 20px rgba(15,37,88,.05);">
+					<div style="font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);line-height:1.35;">${label}</div>
+					<div style="margin-top:6px;font-size:1.1rem;font-weight:800;color:var(--navy);">${value}</div>
+				</div>
+			`)
 			.join('');
-		const buildRows = (obj, sortNumeric=false) => {
-			if (!obj || typeof obj !== 'object' || Object.keys(obj).length === 0) return '<tr><td class="text-muted">No data</td><td></td></tr>';
+		const buildMetricRows = (obj, sortNumeric = false) => {
+			if (!obj || typeof obj !== 'object' || Object.keys(obj).length === 0) {
+				return `
+					<div style="padding:12px 14px;border-radius:14px;background:#f8fbff;border:1px dashed var(--border);color:var(--text-muted);font-size:.9rem;">
+						No data available
+					</div>
+				`;
+			}
 			const keys = Object.keys(obj);
 			if (sortNumeric) keys.sort((a,b)=>Number(a)-Number(b)); else keys.sort();
-			return keys.map(k => `<tr><td>${k}</td><td class="text-end">${obj[k]}</td></tr>`).join('');
-		};
-
-		content.innerHTML = `
-			<h5>${data.barangay_name} Summary</h5>
-			<p><strong>Total youth:</strong> ${data.total}</p>
-			<div class="row">
-				<div class="col-md-6">
-					<h6 class="mt-3">Sex</h6>
-					<table class="table table-sm table-borderless">
-						<tbody>${buildRows(data.sex)}</tbody>
-					</table>
-					<h6 class="mt-3">Civil Status</h6>
-					<table class="table table-sm table-borderless">
-						<tbody>${buildRows(data.civil_status)}</tbody>
-					</table>
+			return keys.map(k => `
+				<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-radius:12px;background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);border:1px solid #d9e4fb;">
+					<span style="font-size:.95rem;color:var(--navy);font-weight:600;">${k}</span>
+					<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 10px;border-radius:999px;background:#edf4ff;color:#1f4ea3;font-size:.95rem;font-weight:800;">${obj[k]}</span>
 				</div>
-				<div class="col-md-6">
-					<h6 class="mt-3">Ages</h6>
-					<table class="table table-sm table-borderless">
-						<tbody>${buildRows(data.ages, true)}</tbody>
-					</table>
-					<h6 class="mt-3">Education</h6>
-					<table class="table table-sm table-borderless">
-						<tbody>${buildRows(data.education)}</tbody>
-					</table>
+			`).join('');
+		};
+		const buildMetricCard = (title, rows, accent) => `
+			<div style="padding:16px;border-radius:18px;border:1px solid ${accent}26;background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);box-shadow:0 14px 30px rgba(15,37,88,.06);height:100%;">
+				<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+					<h6 style="margin:0;font-size:1rem;font-weight:800;color:var(--navy);">${title}</h6>
+					<span style="width:10px;height:10px;border-radius:999px;background:${accent};box-shadow:0 0 0 6px ${accent}18;"></span>
+				</div>
+				<div style="display:grid;gap:10px;">
+					${rows}
 				</div>
 			</div>
-			<div class="mt-3">
-				<p><strong>Special counts:</strong></p>
-				<ul>${specialCountItems}</ul>
+		`;
+
+		content.innerHTML = `
+			<div style="display:grid;gap:18px;">
+				<div style="padding:18px 18px 16px;border-radius:20px;background:linear-gradient(135deg,#edf4ff 0%, #ffffff 100%);border:1px solid #d8e5ff;box-shadow:0 16px 34px rgba(15,37,88,.07);">
+					<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+						<div>
+							<h5 style="margin:0 0 4px;font-size:1.65rem;font-weight:900;color:var(--navy);">${data.barangay_name} Summary</h5>
+							<div style="font-size:.9rem;color:var(--text-muted);">Quick demographic overview for this barangay youth list.</div>
+						</div>
+						<div style="display:inline-flex;flex-direction:column;align-items:flex-end;padding:12px 14px;border-radius:16px;background:#ffffff;border:1px solid #d9e4fb;min-width:130px;">
+							<span style="font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:800;">Total Youth</span>
+							<span style="margin-top:4px;font-size:1.65rem;line-height:1;font-weight:900;color:#1f4ea3;">${data.total}</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						${buildMetricCard('Sex', buildMetricRows(data.sex), '#1f4ea3')}
+					</div>
+					<div class="col-md-6">
+						${buildMetricCard('Ages', buildMetricRows(data.ages, true), '#0f8a5f')}
+					</div>
+					<div class="col-md-6">
+						${buildMetricCard('Education', buildMetricRows(data.education), '#d97706')}
+					</div>
+					<div class="col-md-6">
+						${buildMetricCard('Civil Status', buildMetricRows(data.civil_status), '#7c3aed')}
+					</div>
+				</div>
+
+				<div>
+					<p style="margin:0 0 12px;font-size:1rem;font-weight:800;color:var(--navy);">Special counts:</p>
+					<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;">
+						${specialCountItems}
+					</div>
+				</div>
 			</div>
 		`;
 		new bootstrap.Modal(document.getElementById('summaryModal')).show();
@@ -1256,19 +1403,29 @@ function fetchAdminAccountActivity() {
 
 function disableBarangayAccount(userId, username) {
 	if (!CURRENT_USER || !CURRENT_USER.is_admin) return;
-	if (!confirm(`Disable the account for ${username}?`)) return;
-	fetch('/api/admin/disable-account/', {
-		method: 'POST',
-		headers: {'Content-Type': 'application/json'},
-		body: JSON.stringify({ user_id: userId })
-	}).then(res => res.json()).then(data => {
-		if (data.message) {
-			fetchAdminAccountActivity();
-			return;
-		}
-		alert(data.error || 'Failed to disable account.');
-	}).catch(err => {
-		alert('Failed to disable account: ' + (err.message || err));
+	showDeleteConfirmDialog({
+		title: 'Disable Barangay Account',
+		message: `Disable the account for ${username}?`,
+		helper: 'This will block the barangay account from signing in until an administrator enables it again.',
+		name: username,
+		nameLabel: 'Account To Disable',
+		cancelLabel: 'Keep Account Active',
+		approveLabel: 'Disable Account'
+	}).then(confirmed => {
+		if (!confirmed) return;
+		fetch('/api/admin/disable-account/', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({ user_id: userId })
+		}).then(res => res.json()).then(data => {
+			if (data.message) {
+				fetchAdminAccountActivity();
+				return;
+			}
+			alert(data.error || 'Failed to disable account.');
+		}).catch(err => {
+			alert('Failed to disable account: ' + (err.message || err));
+		});
 	});
 }
 
@@ -2222,6 +2379,83 @@ function showTransferConfirmDialog({
 	});
 }
 
+function initDeleteConfirmModal() {
+	const modalEl = $id('deleteConfirmModal');
+	if (!modalEl || typeof bootstrap === 'undefined') return;
+	DELETE_CONFIRM_MODAL = new bootstrap.Modal(modalEl, {
+		backdrop: 'static',
+		keyboard: false
+	});
+
+	const cancelBtn = $id('delete-confirm-cancel');
+	const approveBtn = $id('delete-confirm-approve');
+
+	if (cancelBtn) {
+		cancelBtn.addEventListener('click', () => {
+			if (DELETE_CONFIRM_RESOLVER) DELETE_CONFIRM_RESOLVER(false);
+			DELETE_CONFIRM_RESOLVER = null;
+			DELETE_CONFIRM_MODAL.hide();
+		});
+	}
+
+	if (approveBtn) {
+		approveBtn.addEventListener('click', () => {
+			if (DELETE_CONFIRM_RESOLVER) DELETE_CONFIRM_RESOLVER(true);
+			DELETE_CONFIRM_RESOLVER = null;
+			DELETE_CONFIRM_MODAL.hide();
+		});
+	}
+
+	modalEl.addEventListener('hidden.bs.modal', () => {
+		if (DELETE_CONFIRM_RESOLVER) {
+			DELETE_CONFIRM_RESOLVER(false);
+			DELETE_CONFIRM_RESOLVER = null;
+		}
+	});
+}
+
+function showDeleteConfirmDialog({
+	title = 'Delete Youth Record',
+	message = 'Are you sure you want to delete this record?',
+	helper = 'This action permanently removes the youth profile from the selected barangay list.',
+	name = 'Youth record',
+	nameLabel = 'Record To Delete',
+	cancelLabel = 'No! Keep it!',
+	approveLabel = 'Yes! Delete it'
+} = {}) {
+	if (!DELETE_CONFIRM_MODAL) {
+		return Promise.resolve(confirm(message));
+	}
+
+	const titleEl = $id('delete-confirm-title');
+	const messageEl = $id('delete-confirm-message');
+	const helperEl = $id('delete-confirm-helper');
+	const nameEl = $id('delete-confirm-name');
+	const nameLabelEl = $id('delete-confirm-name-label');
+	const cancelBtn = $id('delete-confirm-cancel');
+	const approveBtn = $id('delete-confirm-approve');
+
+	if (titleEl) {
+		titleEl.innerHTML = `
+			<span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:14px;background:rgba(190,24,93,.12);color:#be185d;">
+				<svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+			</span>
+			${title}
+		`;
+	}
+	if (messageEl) messageEl.textContent = message;
+	if (helperEl) helperEl.textContent = helper;
+	if (nameLabelEl) nameLabelEl.textContent = nameLabel;
+	if (nameEl) nameEl.textContent = name;
+	if (cancelBtn) cancelBtn.textContent = cancelLabel;
+	if (approveBtn) approveBtn.textContent = approveLabel;
+
+	return new Promise(resolve => {
+		DELETE_CONFIRM_RESOLVER = resolve;
+		DELETE_CONFIRM_MODAL.show();
+	});
+}
+
 function updateTabState() {
 	const personalValid = validatePersonalTab();
 	const groupsValid = personalValid && isTabValid('#tab-groups');
@@ -2627,7 +2861,13 @@ function deleteYouth(id) {
 	const y = getYouthById(id);
 	if (!y) return;
 
-	if (confirm(`Are you sure you want to delete the record for ${y.name}?`)) {
+	showDeleteConfirmDialog({
+		message: `Are you sure you want to delete the record for ${y.name}?`,
+		helper: 'This will permanently remove the youth profile from the system for this barangay.',
+		name: y.name
+	}).then(confirmed => {
+		if (!confirmed) return;
+
 		fetch('/api/youth/', {
 			method: 'DELETE',
 			headers: {'Content-Type': 'application/json'},
@@ -2640,7 +2880,7 @@ function deleteYouth(id) {
 				res.json().then(e => alert(e.error));
 			}
 		});
-	}
+	});
 }
 
 function viewFullSummary(id) {
@@ -2650,57 +2890,110 @@ function viewFullSummary(id) {
 	const d = y.full_data;
 	const content = document.getElementById('summary-content');
     
-	const fmt = (val) => val ? '<span class="text-success fw-bold">Yes</span>' : '<span class="text-danger">No</span>';
+	const fmt = (val) => val
+		? '<span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:rgba(15,138,95,.12);color:#0f8a5f;font-weight:800;font-size:.84rem;">Yes</span>'
+		: '<span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:rgba(220,38,38,.1);color:#dc2626;font-weight:800;font-size:.84rem;">No</span>';
 	const fmtList = (values, otherValue, otherLabel) => {
 		const parts = Array.isArray(values) ? [...values] : [];
 		if (otherValue) parts.push(`${otherLabel}: ${otherValue}`);
 		return parts.length ? parts.join(', ') : 'None';
 	};
+	const detailRow = (label, value) => `
+		<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid rgba(217,228,251,.9);">
+			<span style="font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);font-weight:800;min-width:110px;">${label}</span>
+			<span style="text-align:right;color:var(--navy);font-weight:600;flex:1;">${value}</span>
+		</div>
+	`;
+	const statusRow = (label, value, extra = '') => `
+		<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);border:1px solid #d9e4fb;">
+			<div>
+				<div style="font-size:.82rem;font-weight:800;color:var(--navy);">${label}</div>
+				${extra ? `<div style="margin-top:3px;font-size:.82rem;color:var(--text-muted);">${extra}</div>` : ''}
+			</div>
+			<div>${value}</div>
+		</div>
+	`;
+	const sectionCard = (title, accent, body) => `
+		<div style="padding:16px;border-radius:18px;border:1px solid ${accent}26;background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);box-shadow:0 14px 30px rgba(15,37,88,.06);height:100%;">
+			<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+				<h6 style="margin:0;font-size:1rem;font-weight:900;color:var(--navy);">${title}</h6>
+				<span style="width:10px;height:10px;border-radius:999px;background:${accent};box-shadow:0 0 0 6px ${accent}18;"></span>
+			</div>
+			<div style="display:grid;gap:0;">${body}</div>
+		</div>
+	`;
 
 	content.innerHTML = `
-		<div class="row mb-3">
-			<div class="col-md-6 border-end">
-				<h6 class="text-primary border-bottom">Personal Information</h6>
-				<p><strong>Name:</strong> ${y.name}</p>
-				<p><strong>Sex:</strong> ${y.sex} | <strong>Status:</strong> ${d.civil_status}</p>
-				<p><strong>Birthdate:</strong> ${d.birthdate || 'N/A'}</p>
-				<p><strong>Purok:</strong> ${d.purok || 'N/A'}</p>
-				<p><strong>Barangay:</strong> ${d.barangay_name || y.barangay_name || getBarangayNameById(d.barangay_id) || 'N/A'}</p>
-				<p><strong>Municipality:</strong> ${d.municipality || 'Manolo Fortich'}</p>
-				<p><strong>Religion:</strong> ${d.religion || 'N/A'}</p>
-				<p><strong>Contact:</strong> ${d.contact_number || 'N/A'}</p>
+		<div style="display:grid;gap:18px;">
+			<div style="padding:18px 18px 16px;border-radius:20px;background:linear-gradient(135deg,#edf4ff 0%, #ffffff 100%);border:1px solid #d8e5ff;box-shadow:0 16px 34px rgba(15,37,88,.07);">
+				<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+					<div>
+						<h5 style="margin:0 0 6px;font-size:1.55rem;font-weight:900;color:var(--navy);">${y.name}</h5>
+						<div style="display:flex;flex-wrap:wrap;gap:8px;">
+							<span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#ffffff;border:1px solid #d9e4fb;color:#1f4ea3;font-weight:800;font-size:.84rem;">${y.sex || 'Unknown'}</span>
+							<span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#ffffff;border:1px solid #d9e4fb;color:#1f4ea3;font-weight:800;font-size:.84rem;">${d.civil_status || 'No civil status'}</span>
+							<span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#ffffff;border:1px solid #d9e4fb;color:#1f4ea3;font-weight:800;font-size:.84rem;">Age ${y.age ?? 'N/A'}</span>
+						</div>
+					</div>
+					<div style="display:inline-flex;flex-direction:column;align-items:flex-end;padding:12px 14px;border-radius:16px;background:#ffffff;border:1px solid #d9e4fb;min-width:165px;">
+						<span style="font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);font-weight:800;">Assigned Barangay</span>
+						<span style="margin-top:4px;font-size:1.08rem;line-height:1.2;font-weight:900;color:#1f4ea3;text-align:right;">${d.barangay_name || y.barangay_name || getBarangayNameById(d.barangay_id) || 'N/A'}</span>
+					</div>
+				</div>
 			</div>
-			<div class="col-md-6">
-				<h6 class="text-primary border-bottom">Education & Work</h6>
-				<p><strong>Level:</strong> ${y.education_level}</p>
-				<p><strong>Course:</strong> ${d.course || 'N/A'}</p>
-				<p><strong>School:</strong> ${d.school_name || 'N/A'}</p>
-				<p><strong>Work Status:</strong> ${d.work_status || 'N/A'}</p>
-				<p><strong>Scholar:</strong> ${fmt(d.is_scholar)} (${d.scholarship_program || 'N/A'})</p>
-				<p><strong>Sports Preference:</strong> ${fmtList(d.sports_preferences, d.sports_preference_other, 'Other')}</p>
-				<p><strong>Talent Preference:</strong> ${fmtList(d.talent_preferences, d.talent_preference_other, 'Other')}</p>
+
+			<div class="row g-3">
+				<div class="col-md-6">
+					${sectionCard('Personal Information', '#1f4ea3', `
+						${detailRow('Birthdate', d.birthdate || 'N/A')}
+						${detailRow('Purok', d.purok || 'N/A')}
+						${detailRow('Municipality', d.municipality || 'Manolo Fortich')}
+						${detailRow('Religion', d.religion || 'N/A')}
+						${detailRow('Contact', d.contact_number || 'N/A')}
+						${detailRow('Email', d.email || 'N/A')}
+					`)}
+				</div>
+				<div class="col-md-6">
+					${sectionCard('Education & Work', '#0f8a5f', `
+						${detailRow('Level', y.education_level || 'N/A')}
+						${detailRow('Course', d.course || 'N/A')}
+						${detailRow('School', d.school_name || 'N/A')}
+						${detailRow('Work Status', d.work_status || 'N/A')}
+						${detailRow('Scholar', `${fmt(d.is_scholar)} <span style="color:var(--text-muted);font-weight:600;">${d.scholarship_program ? `(${d.scholarship_program})` : '(N/A)'}</span>`)}
+						${detailRow('Sports', fmtList(d.sports_preferences, d.sports_preference_other, 'Other'))}
+						${detailRow('Competition Levels', fmtList(d.sports_competition_levels || [], '', ''))}
+						${detailRow('Talents', fmtList(d.talent_preferences, d.talent_preference_other, 'Other'))}
+					`)}
+				</div>
 			</div>
-		</div>
-		<hr>
-		<div class="row">
-			<div class="col-md-4 border-end">
-				<h6 class="text-primary border-bottom">Classifications</h6>
-				<p>In School: ${fmt(d.is_in_school)}</p>
-				<p>OSY: ${fmt(d.is_osy)}</p>
-				<p>4Ps: ${fmt(d.is_4ps)}</p>
-			</div>
-			<div class="col-md-4 border-end">
-				<h6 class="text-primary border-bottom">Special Needs/Group</h6>
-				<p>PWD: ${fmt(d.is_pwd)} (${d.disability_type || 'None'})</p>
-				<p>IP/7 Tribes: ${fmt(d.is_ip)} (${d.tribe_name || 'N/A'})</p>
-				<p>Muslim: ${fmt(d.is_muslim)} (${d.muslim_group || 'N/A'})</p>
-			</div>
-			<div class="col-md-4">
-				<h6 class="text-primary border-bottom">Civic / Others</h6>
-				<p>SK Voter: ${fmt(d.registered_voter_sk)}</p>
-				<p>National Voter: ${fmt(d.registered_voter_national)}</p>
-				<p>Non-Voter: ${fmt(d.is_non_voter)}</p>
-				<p>Attended KK: ${fmt(d.attended_kk_assembly)} (${d.kk_assembly_times || 0} times)</p>
+
+			<div class="row g-3">
+				<div class="col-md-4">
+					${sectionCard('Classifications', '#d97706', `
+						${statusRow('In School', fmt(d.is_in_school))}
+						${statusRow('OSY', fmt(d.is_osy))}
+						${statusRow('Working Youth', fmt(d.is_working_youth))}
+						${statusRow('Unemployed Youth', fmt(d.is_unemployed || d.is_unemployed_youth))}
+						${statusRow('4Ps Beneficiary', fmt(d.is_4ps), `Children: ${d.number_of_children || 0}`)}
+					`)}
+				</div>
+				<div class="col-md-4">
+					${sectionCard('Special Needs / Group', '#7c3aed', `
+						${statusRow('PWD', fmt(d.is_pwd), d.disability_type || 'None')}
+						${statusRow('Specific Needs', fmt(d.has_specific_needs), d.specific_needs_condition || 'None')}
+						${statusRow('IP / 7 Tribes', fmt(d.is_ip), d.tribe_name || 'N/A')}
+						${statusRow('Muslim', fmt(d.is_muslim), d.muslim_group || 'N/A')}
+					`)}
+				</div>
+				<div class="col-md-4">
+					${sectionCard('Civic / Others', '#e11d48', `
+						${statusRow('SK Voter', fmt(d.registered_voter_sk))}
+						${statusRow('National Voter', fmt(d.registered_voter_national))}
+						${statusRow('Non-Voter', fmt(d.is_non_voter))}
+						${statusRow('Voted Last SK', fmt(d.voted_last_sk))}
+						${statusRow('Attended KK', fmt(d.attended_kk_assembly), `${d.kk_assembly_times || 0} time(s)`)}
+					`)}
+				</div>
 			</div>
 		</div>
 	`;
