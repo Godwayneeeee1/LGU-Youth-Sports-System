@@ -167,6 +167,25 @@ const TALENT_PREFERENCE_OPTIONS = [
 	'Vocals / Choir'
 ];
 
+const ORGANIZATION_JOINED_OPTIONS = [
+	'BASBASONON ORGANIZATION',
+	'MANOLO FORTICH JUNIOR CHESS CLUB',
+	'STO. NINO NATIONAL HIGH SCHOOL - SUPREME SECONDARY LEARNER GOVERNMENT (SSLG)',
+	'MANOLO FORTICH BANOG BANOG ARNIS KALI ESKRIMA (MFBAKE Club)',
+	'IMMACULATE CONCEPTION PARISH YOUTH APOSTOLATE',
+	'ST. JUDE THADDEUS PARISH YOUTH APOSTOLATE',
+	'YOUTH FOR ENVIRONMENT IN SCHOOLS ORGANIZATION (YES-O) OF DALIRIG NATIONAL HIGH SCHOOL',
+	'SUPREME SECONDARY LEARNER GOVERNMENT - DALIRIG NATIONAL HIGHSCHOOL',
+	'MANOLO FORTICH VOLLEYBALL CLUB',
+	'MANOLO FORTICH NATIONAL HIGH SCHOOL - SUPREME SECONDARY LEARNER GOVERNMENT',
+	'KRISTYANONG KABATAAN PARA SA BAYAN MOVEMENT-MANOLO FORTICH',
+	'PROPELLING OUR INHERITED NATION THROUGH OUR YOUTH INCORPORATED (POINTY INC.) MANOLO FORTICH',
+	'UPPER CALANAWAN YOUTH MOVEMENT',
+	'BUKHAD-MANOLO FORTICH',
+	'SANKANAN NHS - SUPREME SECONDARY LEARNER GOVERNMENT',
+	'YOUTH FOR ENVIRONMENT IN SCHOOLS ORGANIZATION (YES-O) - MANOLO FORTICH'
+];
+
 window.nextTab = window.nextTab || function(target) { console.warn('nextTab called before initialization', target); };
 window.prevTab = window.prevTab || function(target) { console.warn('prevTab called before initialization', target); };
 
@@ -341,6 +360,25 @@ function renderPreferenceCheckboxGroup(containerId, prefix, options) {
 	`).join('');
 }
 
+function renderPreferencePopupGroup(containerId, prefix, options) {
+	const container = $id(containerId);
+	if (!container) return;
+	container.innerHTML = `
+		<div class="preference-popup-grid">
+			${options.map(option => `
+				<label class="preference-popup-item" for="${preferenceOptionId(prefix, option)}">
+					<input type="checkbox" class="form-check-input" id="${preferenceOptionId(prefix, option)}">
+					<span>${option}</span>
+				</label>
+			`).join('')}
+		</div>
+	`;
+}
+
+function renderOrganizationJoinedOptions() {
+	renderPreferencePopupGroup('organizations-joined-options', 'organization-joined', ORGANIZATION_JOINED_OPTIONS);
+}
+
 function collectPreferenceSelections(prefix, options) {
 	return options.filter(option => {
 		const input = $id(preferenceOptionId(prefix, option));
@@ -354,6 +392,72 @@ function applyPreferenceSelections(prefix, options, selectedValues) {
 		const input = $id(preferenceOptionId(prefix, option));
 		if (input) input.checked = selectedSet.has(option);
 	});
+}
+
+function updatePreferencePopupLabel(prefix, options, labelId, emptyLabel) {
+	const label = $id(labelId);
+	if (!label) return;
+	const selected = collectPreferenceSelections(prefix, options);
+	if (!selected.length) {
+		label.textContent = emptyLabel;
+		return;
+	}
+	if (selected.length === 1) {
+		label.textContent = selected[0];
+		return;
+	}
+	label.textContent = `${selected.length} selected`;
+}
+
+function initPreferencePopupDropdown(wrapId, triggerId, panelId, prefix, options, labelId, emptyLabel) {
+	const wrap = $id(wrapId);
+	const trigger = $id(triggerId);
+	const panel = $id(panelId);
+	if (!wrap || !trigger || !panel) return;
+	if (wrap.dataset.preferenceDropdownReady === 'true' || wrap.dataset.orgDropdownReady === 'true') return;
+
+	const setOpen = (isOpen) => {
+		wrap.classList.toggle('open', isOpen);
+		trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+	};
+
+	trigger.addEventListener('click', () => {
+		setOpen(!wrap.classList.contains('open'));
+	});
+
+	panel.addEventListener('change', (event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+		updatePreferencePopupLabel(prefix, options, labelId, emptyLabel);
+	});
+
+	document.addEventListener('click', (event) => {
+		if (!wrap.contains(event.target)) setOpen(false);
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') setOpen(false);
+	});
+
+	updatePreferencePopupLabel(prefix, options, labelId, emptyLabel);
+	wrap.dataset.preferenceDropdownReady = 'true';
+	if (wrapId === 'organizations-joined-wrap') {
+		wrap.dataset.orgDropdownReady = 'true';
+	}
+}
+
+function collectOrganizationJoinedSelections() {
+	return collectPreferenceSelections('organization-joined', ORGANIZATION_JOINED_OPTIONS);
+}
+
+function applyOrganizationJoinedSelections(selectedValues) {
+	applyPreferenceSelections('organization-joined', ORGANIZATION_JOINED_OPTIONS, selectedValues);
+	updatePreferencePopupLabel(
+		'organization-joined',
+		ORGANIZATION_JOINED_OPTIONS,
+		'organizations-joined-label',
+		'Select organizations'
+	);
 }
 
 function syncNonVoterCheckbox(changedId) {
@@ -437,6 +541,95 @@ function getSpecialCountEntries(data) {
 	];
 }
 
+function buildBarangaySummaryFromLoadedYouths(bid) {
+	const youths = Array.isArray(allYouths)
+		? allYouths.filter(y => String(y.barangay_id) === String(bid))
+		: [];
+	const barangayName = youths[0]?.barangay_name || getBarangayNameById(bid) || 'Barangay';
+	const summary = {
+		barangay_id: bid,
+		barangay_name: barangayName,
+		total: youths.length,
+		sex: {},
+		ages: {},
+		civil_status: {},
+		education: {},
+		pwd: 0,
+		pwd_male: 0,
+		pwd_female: 0,
+		fourps: 0,
+		fourps_male: 0,
+		fourps_female: 0,
+		working: 0,
+		working_male: 0,
+		working_female: 0,
+		unemployed: 0,
+		unemployed_male: 0,
+		unemployed_female: 0,
+		ip: 0,
+		ip_male: 0,
+		ip_female: 0,
+		muslim: 0,
+		muslim_male: 0,
+		muslim_female: 0,
+		osy: 0,
+		osy_male: 0,
+		osy_female: 0
+	};
+
+	youths.forEach(youth => {
+		const details = youth.full_data || {};
+		const sex = String(youth.sex || '').trim() || 'Unknown';
+		const age = String(youth.age ?? '0');
+		const civilStatus = String(details.civil_status || '').trim() || 'Unknown';
+		const educationLevel = String(youth.education_level || '').trim() || 'Unknown';
+		const sexKey = sex.toLowerCase();
+
+		summary.sex[sex] = (summary.sex[sex] || 0) + 1;
+		summary.ages[age] = (summary.ages[age] || 0) + 1;
+		summary.civil_status[civilStatus] = (summary.civil_status[civilStatus] || 0) + 1;
+		summary.education[educationLevel] = (summary.education[educationLevel] || 0) + 1;
+
+		if (toBool(details.is_pwd)) {
+			summary.pwd += 1;
+			if (sexKey === 'male') summary.pwd_male += 1;
+			if (sexKey === 'female') summary.pwd_female += 1;
+		}
+		if (toBool(details.is_4ps)) {
+			summary.fourps += 1;
+			if (sexKey === 'male') summary.fourps_male += 1;
+			if (sexKey === 'female') summary.fourps_female += 1;
+		}
+		if (toBool(details.is_working_youth)) {
+			summary.working += 1;
+			if (sexKey === 'male') summary.working_male += 1;
+			if (sexKey === 'female') summary.working_female += 1;
+		}
+		if (toBool(details.is_unemployed) || toBool(details.is_unemployed_youth)) {
+			summary.unemployed += 1;
+			if (sexKey === 'male') summary.unemployed_male += 1;
+			if (sexKey === 'female') summary.unemployed_female += 1;
+		}
+		if (toBool(details.is_ip)) {
+			summary.ip += 1;
+			if (sexKey === 'male') summary.ip_male += 1;
+			if (sexKey === 'female') summary.ip_female += 1;
+		}
+		if (toBool(details.is_muslim)) {
+			summary.muslim += 1;
+			if (sexKey === 'male') summary.muslim_male += 1;
+			if (sexKey === 'female') summary.muslim_female += 1;
+		}
+		if (toBool(details.is_osy)) {
+			summary.osy += 1;
+			if (sexKey === 'male') summary.osy_male += 1;
+			if (sexKey === 'female') summary.osy_female += 1;
+		}
+	});
+
+	return summary;
+}
+
 function buildSummaryRows(data) {
 	const AGE_START = 15, AGE_END = 30;
 	const ageCols = [];
@@ -502,8 +695,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 	initYouthBarangayDropdown();
 	initTransferConfirmModal();
 	initDeleteConfirmModal();
-	renderPreferenceCheckboxGroup('sports-preference-options', 'sport-pref', SPORT_PREFERENCE_OPTIONS);
-	renderPreferenceCheckboxGroup('talent-preference-options', 'talent-pref', TALENT_PREFERENCE_OPTIONS);
+	renderPreferencePopupGroup('sports-preference-options', 'sport-pref', SPORT_PREFERENCE_OPTIONS);
+	renderPreferencePopupGroup('talent-preference-options', 'talent-pref', TALENT_PREFERENCE_OPTIONS);
+	renderOrganizationJoinedOptions();
+	initPreferencePopupDropdown(
+		'sports-preference-wrap',
+		'sports-preference-trigger',
+		'sports-preference-options',
+		'sport-pref',
+		SPORT_PREFERENCE_OPTIONS,
+		'sports-preference-label',
+		'Select sports'
+	);
+	initPreferencePopupDropdown(
+		'talent-preference-wrap',
+		'talent-preference-trigger',
+		'talent-preference-options',
+		'talent-pref',
+		TALENT_PREFERENCE_OPTIONS,
+		'talent-preference-label',
+		'Select talents'
+	);
+	initPreferencePopupDropdown(
+		'organizations-joined-wrap',
+		'organizations-joined-trigger',
+		'organizations-joined-options',
+		'organization-joined',
+		ORGANIZATION_JOINED_OPTIONS,
+		'organizations-joined-label',
+		'Select organizations'
+	);
 
 	if (onAuthPage) {
 		return;
@@ -746,6 +967,10 @@ async function fetchBarangaySummary(bid) {
 function viewBarangaySummary() {
 	if (!currentBarangayId) return alert('Open a barangay first');
 	fetchBarangaySummary(currentBarangayId).then(data => {
+		const loadedSummary = buildBarangaySummaryFromLoadedYouths(currentBarangayId);
+		if (loadedSummary && Number(loadedSummary.total || 0) !== Number(data.total || 0)) {
+			data = { ...data, ...loadedSummary };
+		}
 		const content = document.getElementById('summary-content');
 		const specialCountItems = getSpecialCountEntries(data)
 			.map(([label, value]) => `
@@ -1837,6 +2062,7 @@ function buildYouthModalDraft() {
 		work_status: val('work_status'),
 		sports_preferences: collectPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS),
 		talent_preferences: collectPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS),
+		organizations_joined: collectOrganizationJoinedSelections(),
 		sports_preference_other: val('sports_preference_other'),
 		talent_preference_other: val('talent_preference_other'),
 		registered_voter_sk: chk('registered_voter_sk'),
@@ -1918,6 +2144,9 @@ function restoreYouthModalDraft() {
 	setYouthBarangayEditable(false);
 	applyPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS, draft.sports_preferences || []);
 	applyPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS, draft.talent_preferences || []);
+	updatePreferencePopupLabel('sport-pref', SPORT_PREFERENCE_OPTIONS, 'sports-preference-label', 'Select sports');
+	updatePreferencePopupLabel('talent-pref', TALENT_PREFERENCE_OPTIONS, 'talent-preference-label', 'Select talents');
+	applyOrganizationJoinedSelections(draft.organizations_joined || []);
 	syncNonVoterCheckbox('is_non_voter');
 	toggleOSY();
 	updateAutoTogglesState();
@@ -1934,6 +2163,9 @@ function resetYouthModalState() {
 	setYouthBarangayEditable(false);
 	applyPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS, []);
 	applyPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS, []);
+	updatePreferencePopupLabel('sport-pref', SPORT_PREFERENCE_OPTIONS, 'sports-preference-label', 'Select sports');
+	updatePreferencePopupLabel('talent-pref', TALENT_PREFERENCE_OPTIONS, 'talent-preference-label', 'Select talents');
+	applyOrganizationJoinedSelections([]);
 	syncNonVoterCheckbox('is_non_voter');
 	toggleOSY();
 	updateAutoTogglesState();
@@ -2011,6 +2243,9 @@ function editYouth(id) {
 		checks.forEach(id => setChk(id, d[id] || y[id] || false));
 		applyPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS, d.sports_preferences || []);
 		applyPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS, d.talent_preferences || []);
+		updatePreferencePopupLabel('sport-pref', SPORT_PREFERENCE_OPTIONS, 'sports-preference-label', 'Select sports');
+		updatePreferencePopupLabel('talent-pref', TALENT_PREFERENCE_OPTIONS, 'talent-preference-label', 'Select talents');
+		applyOrganizationJoinedSelections(d.organizations_joined || []);
 		syncNonVoterCheckbox('is_non_voter');
 
 		setYouthBarangayEditable(true);
@@ -2076,6 +2311,7 @@ function saveYouth(e) {
 		work_status: getVal('work_status'),
 		sports_preferences: collectPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS),
 		talent_preferences: collectPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS),
+		organizations_joined: collectOrganizationJoinedSelections(),
 		sports_preference_other: getVal('sports_preference_other'),
 		talent_preference_other: getVal('talent_preference_other'),
 		registered_voter_sk: getCheck('registered_voter_sk'),
@@ -2898,6 +3134,15 @@ function viewFullSummary(id) {
 		if (otherValue) parts.push(`${otherLabel}: ${otherValue}`);
 		return parts.length ? parts.join(', ') : 'None';
 	};
+	const chipList = (values) => {
+		const parts = Array.isArray(values) ? values.filter(Boolean) : [];
+		if (!parts.length) return '<span style="color:var(--text-muted);font-weight:600;">None</span>';
+		return parts.map(value => `
+			<span style="display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;background:#ffffff;border:1px solid #d9e4fb;color:#1f4ea3;font-size:.82rem;font-weight:700;">
+				${value}
+			</span>
+		`).join('');
+	};
 	const detailRow = (label, value) => `
 		<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid rgba(217,228,251,.9);">
 			<span style="font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);font-weight:800;min-width:110px;">${label}</span>
@@ -2992,6 +3237,16 @@ function viewFullSummary(id) {
 						${statusRow('Non-Voter', fmt(d.is_non_voter))}
 						${statusRow('Voted Last SK', fmt(d.voted_last_sk))}
 						${statusRow('Attended KK', fmt(d.attended_kk_assembly), `${d.kk_assembly_times || 0} time(s)`)}
+					`)}
+				</div>
+			</div>
+
+			<div class="row g-3">
+				<div class="col-12">
+					${sectionCard('Organizations Joined', '#2563eb', `
+						<div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px;">
+							${chipList(d.organizations_joined || [])}
+						</div>
 					`)}
 				</div>
 			</div>

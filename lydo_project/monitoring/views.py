@@ -19,6 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.db.models import Count
 from django.utils import timezone
 from .age_rules import age_on_date, is_birthdate_aged_out as _shared_is_birthdate_aged_out, purge_aged_out_youths as _shared_purge_aged_out_youths
@@ -315,6 +316,44 @@ TALENT_PREFERENCE_OPTIONS = [
     'Vocals / Choir',
 ]
 
+ORGANIZATION_JOINED_OPTIONS = [
+    'BASBASONON ORGANIZATION',
+    'MANOLO FORTICH JUNIOR CHESS CLUB',
+    'STO. NINO NATIONAL HIGH SCHOOL - SUPREME SECONDARY LEARNER GOVERNMENT (SSLG)',
+    'MANOLO FORTICH BANOG BANOG ARNIS KALI ESKRIMA (MFBAKE Club)',
+    'IMMACULATE CONCEPTION PARISH YOUTH APOSTOLATE',
+    'ST. JUDE THADDEUS PARISH YOUTH APOSTOLATE',
+    'YOUTH FOR ENVIRONMENT IN SCHOOLS ORGANIZATION (YES-O) OF DALIRIG NATIONAL HIGH SCHOOL',
+    'SUPREME SECONDARY LEARNER GOVERNMENT - DALIRIG NATIONAL HIGHSCHOOL',
+    'MANOLO FORTICH VOLLEYBALL CLUB',
+    'MANOLO FORTICH NATIONAL HIGH SCHOOL - SUPREME SECONDARY LEARNER GOVERNMENT',
+    'KRISTYANONG KABATAAN PARA SA BAYAN MOVEMENT-MANOLO FORTICH',
+    'PROPELLING OUR INHERITED NATION THROUGH OUR YOUTH INCORPORATED (POINTY INC.) MANOLO FORTICH',
+    'UPPER CALANAWAN YOUTH MOVEMENT',
+    'BUKHAD-MANOLO FORTICH',
+    'SANKANAN NHS - SUPREME SECONDARY LEARNER GOVERNMENT',
+    'YOUTH FOR ENVIRONMENT IN SCHOOLS ORGANIZATION (YES-O) - MANOLO FORTICH',
+]
+
+ORGANIZATION_JOINED_FORM_OPTIONS = [
+    'Basbasonon Organization',
+    'Manolo Fortich Junior Chess Club',
+    'Sto. Nino NHS - SSLG',
+    'MF Banog Banog Arnis Kali Eskrima',
+    'Immaculate Conception PYA',
+    'St. Jude Thaddeus PYA',
+    'YES-O of Dalirig NHS',
+    'SSLG - Dalirig NHS',
+    'Manolo Fortich Volleyball Club',
+    'Manolo Fortich NHS - SSLG',
+    'KKB Movement - Manolo Fortich',
+    'POINTY Inc. - Manolo Fortich',
+    'Upper Calanawan Youth Movement',
+    'BUKHAD - Manolo Fortich',
+    'Sankanan NHS - SSLG',
+    'YES-O - Manolo Fortich',
+]
+
 OTHER_SPORTS_LABEL = 'Other Sports'
 OTHER_TALENTS_LABEL = 'Other Talents'
 
@@ -343,6 +382,7 @@ def _build_blank_form_context(barangay_name):
         'osy_program_options': _choice_labels('osy_program_type'),
         'specific_needs_options': _choice_labels('specific_needs_condition'),
         'kk_no_reason_options': _choice_labels('kk_assembly_no_reason'),
+        'organization_joined_options': ORGANIZATION_JOINED_FORM_OPTIONS,
         'sports_preference_options': sorted(SPORT_PREFERENCE_OPTIONS, key=str.casefold),
         'sports_competition_level_options': SPORT_COMPETITION_LEVEL_OPTIONS,
         'talent_preference_options': sorted(TALENT_PREFERENCE_OPTIONS, key=str.casefold),
@@ -363,6 +403,59 @@ def _normalize_youth_name(value):
     return ' '.join(normalized.casefold().split())
 
 
+@lru_cache(maxsize=1)
+def _organizations_joined_column_available():
+    """Return whether the live database already has the organizations_joined column."""
+    try:
+        with connection.cursor() as cursor:
+            columns = connection.introspection.get_table_description(cursor, Youth._meta.db_table)
+    except Exception:
+        return False
+    for column in columns:
+        column_name = getattr(column, 'name', None)
+        if column_name is None and column:
+            column_name = column[0]
+        if column_name == 'organizations_joined':
+            return True
+    return False
+
+
+def _youth_queryset():
+    """Base youth queryset that tolerates older databases missing new columns."""
+    queryset = Youth.objects.select_related('barangay')
+    if not _organizations_joined_column_available():
+        queryset = queryset.defer('organizations_joined')
+    return queryset
+
+
+def _organizations_joined_values_for_youth(youth):
+    if not _organizations_joined_column_available():
+        return []
+    return _parse_preference_list(youth.organizations_joined, ORGANIZATION_JOINED_OPTIONS)
+
+
+def _create_youth_record(fields):
+    """Create a youth record even when the database is temporarily behind the model schema."""
+    if _organizations_joined_column_available():
+        return Youth.objects.create(**fields)
+
+    youth = Youth(**fields)
+    insert_columns = []
+    insert_values = []
+    for model_field in Youth._meta.local_concrete_fields:
+        if model_field.primary_key or model_field.name == 'organizations_joined':
+            continue
+        insert_columns.append(connection.ops.quote_name(model_field.column))
+        insert_values.append(getattr(youth, model_field.attname))
+
+    placeholders = ', '.join(['%s'] * len(insert_columns))
+    quoted_table = connection.ops.quote_name(Youth._meta.db_table)
+    sql = f"INSERT INTO {quoted_table} ({', '.join(insert_columns)}) VALUES ({placeholders})"
+    with connection.cursor() as cursor:
+        cursor.execute(sql, insert_values)
+    return youth
+
+
 def _find_duplicate_youth_record(name, birthdate, sex, exclude_id=None):
     """Find an existing youth record that matches the same person identity."""
     normalized_name = _normalize_youth_name(name)
@@ -371,7 +464,7 @@ def _find_duplicate_youth_record(name, birthdate, sex, exclude_id=None):
 
     # Birthdate and sex narrow the queryset first; normalized name matching
     # catches differences like extra spaces or accented characters.
-    queryset = Youth.objects.select_related('barangay').filter(birthdate=birthdate, sex=sex)
+    queryset = _youth_queryset().filter(birthdate=birthdate, sex=sex)
     if exclude_id:
         queryset = queryset.exclude(id=exclude_id)
 
@@ -581,7 +674,7 @@ def _sports_competition_scope_label(user):
 
 
 def _get_sports_competition_level_rows_for_user(user):
-    youths = Youth.objects.select_related('barangay').all()
+    youths = _youth_queryset().all()
     if not _is_system_admin(user):
         assigned = _assigned_barangay(user)
         if not assigned:
@@ -723,14 +816,14 @@ def _build_sports_competition_levels_pdf(user):
 
 def _pdf_safe_text(value):
     value = unicodedata.normalize('NFKD', str(value or ''))
-    value = value.encode('ascii', 'ignore').decode('ascii')
+    value = value.encode('cp1252', 'ignore').decode('cp1252')
     value = value.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
     return value.replace('\r', '').replace('\n', ' ')
 
 
 def _wrap_pdf_text(text, max_width, font_size):
     text = unicodedata.normalize('NFKD', str(text or ''))
-    text = text.encode('ascii', 'ignore').decode('ascii')
+    text = text.encode('cp1252', 'ignore').decode('cp1252')
     text = text.replace('\r', '').replace('\n', ' ')
     if not text:
         return []
@@ -970,8 +1063,10 @@ class _SimplePdf:
         objects[1] = "<< /Type /Catalog /Pages 2 0 R >>"
         kids = ' '.join(f"{page_id} 0 R" for page_id in page_ids)
         objects[2] = f"<< /Type /Pages /Count {len(page_ids)} /Kids [{kids}] >>"
-        objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-        objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"
+        # Use WinAnsiEncoding so extended cp1252 characters like © and – render
+        # correctly in the generated PDF footer/header text.
+        objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"
+        objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"
 
         for image_name, image in self._images.items():
             alpha_bytes = image.get('alpha')
@@ -994,10 +1089,11 @@ class _SimplePdf:
             objects[image_ids[image_name]] = image_header + image_bytes + b"\nendstream"
 
         for page_index, content in enumerate(self.pages):
-            content_bytes = content.encode('latin-1', 'replace')
+            content_bytes = content.encode('cp1252', 'replace')
             content_id = content_ids[page_index]
             page_id = page_ids[page_index]
-            objects[content_id] = f"<< /Length {len(content_bytes)} >>\nstream\n{content}\nendstream"
+            content_header = f"<< /Length {len(content_bytes)} >>\nstream\n".encode('latin-1')
+            objects[content_id] = content_header + content_bytes + b"\nendstream"
             xobjects = self._page_xobjects[page_index] if page_index < len(self._page_xobjects) else set()
             xobject_resource = ""
             if xobjects:
@@ -1114,8 +1210,14 @@ def _draw_page_header(pdf, barangay_name, page_number, total_pages, include_logo
         color=(0.28, 0.35, 0.46),
     )
     pdf.line(left, pdf.page_height - 56, right, pdf.page_height - 56, width=1.1, color=(0.10, 0.22, 0.44))
-    pdf.text(left, footer_y, "LGU Youth & Sports", size=7.5, color=(0.45, 0.52, 0.62))
-    pdf.text(right - 56, footer_y, f"Page {page_number} of {total_pages}", size=8.5, color=(0.45, 0.52, 0.62))
+    pdf.text(
+        left,
+        footer_y,
+        "\u00A9 2026 Local Government Unit of Manolo Fortich \u2013 Youth & Sports Development Office.",
+        size=5.9,
+        color=(0.45, 0.52, 0.62),
+    )
+    pdf.text(right - 52, footer_y, f"Page {page_number} of {total_pages}", size=7.6, color=(0.45, 0.52, 0.62))
 
 
 def _draw_section_banner(pdf, top, title):
@@ -1239,7 +1341,7 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
     top = max(row_top + 36, scholarship_bottom)
     top = _draw_line_field(pdf, right_x, top + 2, half_width, "Scholarship Program", line_y_offset=24)
 
-    top += 10
+    top += 8
     top = _draw_section_banner(pdf, top, "CIVIC AND OTHER")
     row_top = top
     left_bottom = _draw_checkbox_list(
@@ -1254,8 +1356,8 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
             "Voted in Last SK Election",
         ],
         columns=1,
-        size=8.6,
-        row_gap=4,
+        size=8.1,
+        row_gap=3,
     )
     right_bottom = _draw_checkbox_list(
         pdf,
@@ -1265,11 +1367,11 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         "4Ps and Family",
         ["4Ps Beneficiary"],
         columns=1,
-        size=8.6,
-        row_gap=4,
+        size=8.1,
+        row_gap=3,
     )
-    right_bottom = _draw_line_field(pdf, right_x, right_bottom + 4, half_width, "Number of Children", line_y_offset=24)
-    top = max(left_bottom, right_bottom) + 8
+    right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, half_width, "Number of Children", line_y_offset=22)
+    top = max(left_bottom, right_bottom) + 6
     row_top = top
     left_bottom = _draw_checkbox_list(
         pdf,
@@ -1279,10 +1381,10 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         "KK Assembly Attendance",
         ["Attended KK Assembly", "Did not attend"],
         columns=1,
-        size=8.6,
-        row_gap=4,
+        size=8.1,
+        row_gap=3,
     )
-    left_bottom = _draw_line_field(pdf, left_x, left_bottom + 4, half_width, "If yes, how many times", line_y_offset=24)
+    left_bottom = _draw_line_field(pdf, left_x, left_bottom + 2, half_width, "If yes, how many times", line_y_offset=22)
     right_bottom = _draw_checkbox_list(
         pdf,
         right_x,
@@ -1291,10 +1393,23 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         "If no, reason",
         context['kk_no_reason_options'],
         columns=1,
-        size=8.6,
-        row_gap=4,
+        size=8.1,
+        row_gap=3,
     )
-    _draw_line_field(pdf, right_x, right_bottom + 4, half_width, "Other reason / notes", line_y_offset=24)
+    right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, half_width, "Other reason / notes", line_y_offset=22)
+    top = max(left_bottom, right_bottom) + 6
+    _draw_checkbox_list(
+        pdf,
+        left_x,
+        top,
+        content_width,
+        "Organizations Joined",
+        context['organization_joined_options'],
+        columns=2,
+        size=6.1,
+        row_gap=2,
+        col_gap=10,
+    )
 
     # Page 2: Groups and needs + signatures
     pdf.add_page()
@@ -1902,21 +2017,24 @@ def barangay_summary(request, bid):
     access_error = _assert_barangay_access(request, barangay)
     if access_error:
         return access_error
-    youths   = Youth.objects.filter(barangay=barangay)
+    youths = Youth.objects.filter(barangay=barangay)
+    youth_rows = youths.values('birthdate', 'sex', 'civil_status', 'education_level')
 
-    age_counts   = {}
-    sex_by_age   = {}
+    age_counts = {}
+    sex_by_age = {}
     civil_by_age = {}
-    edu_by_age   = {}
+    edu_by_age = {}
 
-    for y in youths:
-        age = str(y.age)
+    for row in youth_rows:
+        birthdate = row.get('birthdate')
+        age_value = age_on_date(birthdate) if birthdate else 0
+        age = str(age_value)
         age_counts[age] = age_counts.get(age, 0) + 1
 
         for bucket, key in [
-            (sex_by_age,   y.sex             or 'Unknown'),
-            (civil_by_age, y.civil_status    or 'Unknown'),
-            (edu_by_age,   y.education_level or 'Unknown'),
+            (sex_by_age, row.get('sex') or 'Unknown'),
+            (civil_by_age, row.get('civil_status') or 'Unknown'),
+            (edu_by_age, row.get('education_level') or 'Unknown'),
         ]:
             bucket.setdefault(key, {})
             bucket[key][age] = bucket[key].get(age, 0) + 1
@@ -2136,7 +2254,7 @@ def talent_sports_map_api(request):
         return JsonResponse({'error': 'Unauthorized. Please login.'}, status=401)
     _purge_aged_out_youths()
 
-    youths = Youth.objects.select_related('barangay').filter(birthdate__isnull=False)
+    youths = _youth_queryset().filter(birthdate__isnull=False)
     if not _is_system_admin(request.user):
         assigned = _assigned_barangay(request.user)
         if not assigned:
@@ -2215,7 +2333,7 @@ def youth_api(request):
 
     # GET: list youth profiles
     if request.method == 'GET':
-        youths = Youth.objects.select_related('barangay').all()
+        youths = _youth_queryset().all()
         if not _is_system_admin(request.user):
             assigned = _assigned_barangay(request.user)
             if not assigned:
@@ -2266,6 +2384,7 @@ def youth_api(request):
                     'sports_preferences':       _parse_preference_list(y.sports_preferences, SPORT_PREFERENCE_OPTIONS),
                     'talent_preferences':       _parse_preference_list(y.talent_preferences, TALENT_PREFERENCE_OPTIONS),
                     'sports_competition_levels': _parse_preference_list(y.sports_competition_levels, SPORT_COMPETITION_LEVEL_OPTIONS),
+                    'organizations_joined':     _organizations_joined_values_for_youth(y),
                     'sports_preference_other':  y.sports_preference_other,
                     'talent_preference_other':  y.talent_preference_other,
                     'registered_voter_sk':      y.registered_voter_sk,
@@ -2353,6 +2472,10 @@ def youth_api(request):
                 data.get('sports_competition_levels', []),
                 SPORT_COMPETITION_LEVEL_OPTIONS,
             )
+            organizations_joined = _serialize_preference_list(
+                data.get('organizations_joined', []),
+                ORGANIZATION_JOINED_OPTIONS,
+            )
             sports_preference_other = str(data.get('sports_preference_other') or '').strip()
             talent_preference_other = str(data.get('talent_preference_other') or '').strip()
 
@@ -2409,19 +2532,21 @@ def youth_api(request):
                 'is_4ps':           get_bool('is_4ps'),
                 'number_of_children': get_int('number_of_children'),
             }
+            if _organizations_joined_column_available():
+                fields['organizations_joined'] = organizations_joined
 
             if request.method == 'POST':
                 duplicate_youth = _find_duplicate_youth_record(name, parsed_birthdate, sex_value)
                 if duplicate_youth:
                     return _duplicate_youth_response(request, duplicate_youth, barangay)
-                Youth.objects.create(**fields)
+                _create_youth_record(fields)
                 return JsonResponse({'message': 'Youth profile added successfully'})
 
             # PUT updates an existing record
             youth_id = data.get('id')
             if not youth_id:
                 return JsonResponse({'error': 'ID is required for update'}, status=400)
-            youth = get_object_or_404(Youth, id=youth_id)
+            youth = get_object_or_404(_youth_queryset(), id=youth_id)
             existing_access_error = _assert_barangay_access(request, youth.barangay)
             if existing_access_error:
                 return existing_access_error
@@ -2442,7 +2567,7 @@ def youth_api(request):
                     )
             for key, value in fields.items():
                 setattr(youth, key, value)
-            youth.save()
+            youth.save(update_fields=list(fields.keys()))
             return JsonResponse({'message': 'Youth profile updated successfully'})
 
         except Exception as e:
@@ -2456,7 +2581,7 @@ def youth_api(request):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
         try:
-            youth = get_object_or_404(Youth, id=data.get('id'))
+            youth = get_object_or_404(_youth_queryset(), id=data.get('id'))
             access_error = _assert_barangay_access(request, youth.barangay)
             if access_error:
                 return access_error

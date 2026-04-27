@@ -794,6 +794,19 @@ h1,h2,h3,h4,h5,h6 {
 .btn-close-white:hover { opacity: 1; }
 
 .modal-body { padding: 24px; }
+
+#youthModal .modal-content,
+#youthModal .modal-body,
+#youthModal .tab-content,
+#youthModal .tab-pane,
+#youthModal form {
+    overflow: visible;
+}
+
+#youthModal .register-select-wrap.open {
+    z-index: 1065;
+}
+
 .modal-footer {
     padding: 16px 24px;
     border-top: 1px solid var(--border);
@@ -1123,6 +1136,10 @@ body.register-page .login-wrapper {
     position: relative;
 }
 
+.register-select-wrap.open {
+    z-index: 40;
+}
+
 .register-select-trigger {
     width: 100%;
     min-height: 48px;
@@ -1180,6 +1197,10 @@ body.register-page .login-wrapper {
     display: block;
 }
 
+.popup-select-card {
+    overflow: visible;
+}
+
 .register-select-option {
     width: 100%;
     border: none;
@@ -1197,6 +1218,44 @@ body.register-page .login-wrapper {
 .register-select-option.selected {
     background: #eef2ff;
     color: var(--navy);
+}
+
+.preference-popup-panel {
+    padding: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.preference-popup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+}
+
+.preference-popup-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+    color: var(--text-base);
+}
+
+.preference-popup-item:hover {
+    background: #eef2ff;
+    color: var(--navy);
+}
+
+.preference-popup-item input {
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.preference-popup-item span {
+    font-size: 0.85rem;
+    line-height: 1.4;
 }
 
 .btn-login-submit {
