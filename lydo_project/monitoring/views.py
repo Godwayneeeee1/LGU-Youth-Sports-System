@@ -1298,7 +1298,7 @@ def _draw_page_header(pdf, barangay_name, page_number, total_pages, include_logo
             title_x += 48
         except (OSError, ValueError):
             title_x = left
-    pdf.text(title_x, pdf.page_height - top - 16, "LGU Youth & Sports Youth Profile Form", size=16.5, bold=True, color=(0.10, 0.22, 0.44))
+    pdf.text(title_x, pdf.page_height - top - 16, "LGU Youth & Sports Profile Form", size=16.5, bold=True, color=(0.10, 0.22, 0.44))
     pdf.text(
         right - 120,
         pdf.page_height - top - 28,
