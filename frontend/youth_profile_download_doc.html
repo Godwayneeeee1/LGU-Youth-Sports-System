@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Youth Profile Form - {{ barangay_name }}</title>
+    <style>
+        @page {
+            size: 8.27in 11.69in;
+            margin: 0.45in 0.45in 0.55in 0.45in;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            width: 100%;
+            page-break-after: always;
+        }
+
+        .page.last {
+            page-break-after: auto;
+        }
+
+        .header {
+            border: 2px solid #163d7a;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+        }
+
+        .header-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #163d7a;
+            margin-bottom: 4px;
+        }
+
+        .header-subtitle {
+            font-size: 9pt;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .meta {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .meta td {
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
+            width: 33.33%;
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 7.5pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+
+        .meta-value {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #163d7a;
+        }
+
+        .section-bar {
+            background: #163d7a;
+            color: #ffffff;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 7px 10px;
+            font-size: 9.5pt;
+            margin: 12px 0 8px 0;
+        }
+
+        .subhead {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #163d7a;
+            margin: 8px 0 6px 0;
+        }
+
+        .note {
+            font-size: 8.5pt;
+            color: #475569;
+            margin: 2px 0 6px 0;
+        }
+
+        table.form-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        .form-table td,
+        .form-table th {
+            border: 1px solid #cbd5e1;
+            padding: 6px 7px;
+            vertical-align: top;
+        }
+
+        .label {
+            font-size: 7.5pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #64748b;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .line {
+            display: block;
+            border-bottom: 1px solid #334155;
+            height: 14px;
+            width: 84%;
+        }
+
+        .line.short {
+            width: 64%;
+        }
+
+        .line.medium {
+            width: 58%;
+        }
+
+        .line.tiny {
+            width: 50%;
+        }
+
+        .check-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .check-grid td {
+            border: none;
+            padding: 2px 8px 2px 0;
+            vertical-align: top;
+        }
+
+        .check {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin-right: 5px;
+        }
+
+        .write-lines {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .write-lines td {
+            border: none;
+            padding: 3px 0;
+        }
+
+        .write-line {
+            display: inline-block;
+            width: 78%;
+            border-bottom: 1px solid #334155;
+            height: 13px;
+            vertical-align: middle;
+        }
+
+        .write-line.with-box {
+            width: 72%;
+        }
+
+        .write-line.numbered {
+            width: 60%;
+        }
+
+        .write-number {
+            display: inline-block;
+            width: 16px;
+            margin-right: 8px;
+            font-size: 8.5pt;
+            font-weight: bold;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+        .footer-signatures {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 52px;
+        }
+
+        .footer-signatures td {
+            border: none;
+            padding: 0 12px 0 0;
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #334155;
+            height: 18px;
+            margin-bottom: 6px;
+        }
+
+        .signature-label {
+            text-align: center;
+            font-size: 8.5pt;
+            color: #475569;
+        }
+
+        .page-number {
+            margin-top: 10px;
+            text-align: right;
+            color: #64748b;
+            font-size: 8pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="header-title">LGU Youth &amp; Sports Youth Profile Form</div>
+            <div class="header-subtitle">Blank intake form for Microsoft Word, manual data gathering, and later system encoding.</div>
+            <table class="meta">
+                <tr>
+                    <td>
+                        <span class="meta-label">Barangay</span>
+                        <span class="meta-value">{{ barangay_name }}</span>
+                    </td>
+                    <td>
+                        <span class="meta-label">Municipality</span>
+                        <span class="meta-value">{{ municipality_name }}</span>
+                    </td>
+                    <td>
+                        <span class="meta-label">Province</span>
+                        <span class="meta-value">{{ province_name }}</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section-bar">Page 1: Personal, Educational, and Employment Background</div>
+
+        <div class="subhead">Youth Classification</div>
+        <div class="note">Check all that apply before filling out the rest of the profile form.</div>
+        <table class="form-table">
+            <tr>
+                <td>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in youth_classification_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">1. Personal Information</div>
+        <table class="form-table">
+            <tr>
+                <td width="33%">
+                    <span class="label">First Name</span>
+                    <span class="line"></span>
+                </td>
+                <td width="18%">
+                    <span class="label">Middle Initial</span>
+                    <span class="line"></span>
+                </td>
+                <td width="49%">
+                    <span class="label">Last Name</span>
+                    <span class="line"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="label">Age</span>
+                    <span class="line short"></span>
+                </td>
+                <td>
+                    <span class="label">Birthday</span>
+                    <span class="line"></span>
+                </td>
+                <td>
+                    <span class="label">Sex</span>
+                    <table class="check-grid">
+                        <tr>
+                            <td><span class="check">&#9633;</span> Male</td>
+                            <td><span class="check">&#9633;</span> Female</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <table class="form-table">
+            <tr>
+                <td>
+                    <span class="label">Civil Status</span>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in civil_status_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <table class="form-table">
+            <tr>
+                <td>
+                    <span class="label">Religion</span>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in religion_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </table>
+                    <span class="label" style="margin-top:10px;">Others</span>
+                    <span class="line medium"></span>
+                </td>
+            </tr>
+        </table>
+
+        <table class="form-table">
+            <tr>
+                <td width="16%">
+                    <span class="label">House No.</span>
+                    <span class="line"></span>
+                </td>
+                <td width="24%">
+                    <span class="label">Sitio/Purok</span>
+                    <span class="line"></span>
+                </td>
+                <td width="28%">
+                    <span class="label">Street Name (if any)</span>
+                    <span class="line"></span>
+                </td>
+                <td width="32%">
+                    <span class="label">Barangay</span>
+                    <span class="line">{{ barangay_name }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4">
+                    <span class="label">Profile Link (Social Media Account)</span>
+                    <span class="line"></span>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">2. Educational Background</div>
+        <table class="form-table">
+            <tr>
+                <td>
+                    <span class="label">Highest Educational Level Attained</span>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in education_level_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:4 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <table class="form-table">
+            <tr>
+                <td width="50%">
+                    <div class="subhead">College</div>
+                    <span class="label">Course Graduated</span>
+                    <span class="line"></span>
+                    <span class="label" style="margin-top:10px;">Year Graduated</span>
+                    <span class="line short"></span>
+                </td>
+                <td width="50%">
+                    <div class="subhead">College Level</div>
+                    <span class="label">Year Level</span>
+                    <span class="line short"></span>
+                </td>
+            </tr>
+            <tr>
+                <td width="50%">
+                    <div class="subhead">Master's Degree</div>
+                    <span class="label">Course Graduated</span>
+                    <span class="line"></span>
+                    <span class="label" style="margin-top:10px;">Year Graduated</span>
+                    <span class="line short"></span>
+                </td>
+                <td width="50%">
+                    <div class="subhead">Doctoral</div>
+                    <span class="label">Course Graduated</span>
+                    <span class="line"></span>
+                    <span class="label" style="margin-top:10px;">Year Graduated</span>
+                    <span class="line short"></span>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">3. Employment Background (For employed only)</div>
+        <table class="form-table">
+            <tr>
+                <td>
+                    <span class="label">Name of Company</span>
+                    <span class="line"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="label">Status</span>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in employment_status_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="page-number">Page 1 of 3</div>
+    </div>
+
+    <div class="page">
+        <div class="header">
+            <div class="header-title">LGU Youth &amp; Sports Youth Profile Form</div>
+            <div class="header-subtitle">Barangay: {{ barangay_name }}</div>
+        </div>
+
+        <div class="section-bar">Page 2: Civic Engagement and Special Categories</div>
+
+        <div class="subhead">4. Community/Civic Engagement</div>
+        <table class="form-table">
+            <tr>
+                <td width="50%">
+                    <span class="label">Voter Status</span>
+                    <table class="check-grid">
+                        <tr><td><span class="check">&#9633;</span> SK Voter (Sangguniang Kabataan)</td></tr>
+                        <tr><td><span class="check">&#9633;</span> Local/National Voter</td></tr>
+                    </table>
+                </td>
+                <td width="50%">
+                    <span class="label">When was the last time you voted?</span>
+                    <table class="write-lines">
+                        <tr><td><span class="write-number">1.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">2.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">3.</span><span class="write-line numbered"></span></td></tr>
+                    </table>
+                    <table class="check-grid" style="margin-top:8px;">
+                        <tr><td><span class="check">&#9633;</span> Never voted</td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">4.a KK Assembly Participation</div>
+        <table class="form-table">
+            <tr>
+                <td width="50%">
+                    <span class="label">Participation</span>
+                    <table class="check-grid">
+                        <tr><td><span class="check">&#9633;</span> Attended KK Assembly</td></tr>
+                        <tr><td><span class="check">&#9633;</span> Did not attend</td></tr>
+                    </table>
+                    <span class="label" style="margin-top:10px;">If yes, how many times</span>
+                    <span class="line short"></span>
+                </td>
+                <td width="50%">
+                    <span class="label">If no, reason</span>
+                    <table class="check-grid">
+                        {% for option in kk_no_reason_options %}
+                        <tr><td><span class="check">&#9633;</span> {{ option }}</td></tr>
+                        {% endfor %}
+                    </table>
+                    <span class="label" style="margin-top:10px;">Other reason / notes</span>
+                    <span class="line"></span>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">4.b Organization Joined</div>
+        <table class="form-table">
+            <tr>
+                <td>
+                    <table class="write-lines">
+                        <tr><td><span class="write-number">1.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">2.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">3.</span><span class="write-line numbered"></span></td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">5. Assistance needed from the Government / Non-Government / People's Organization / Private Sector</div>
+        <div class="note">Refer also to Page 3.</div>
+        <table class="form-table">
+            <tr>
+                <td>
+                    <table class="check-grid">
+                        {% for option in assistance_category_options %}
+                        <tr><td><span class="check">&#9633;</span> {{ option }}</td></tr>
+                        {% endfor %}
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <table class="form-table">
+            <tr>
+                <td>
+                    <span class="label">Youth with Special Needs / Differently-abled</span>
+                    <table class="check-grid">
+                        {% for option in special_need_assistance_options %}
+                        <tr><td><span class="check">&#9633;</span> {{ option }}</td></tr>
+                        {% endfor %}
+                    </table>
+                    <span class="label" style="margin-top:10px;">Others (please specify)</span>
+                    <span class="line"></span>
+                </td>
+            </tr>
+        </table>
+
+        <div class="page-number">Page 2 of 3</div>
+    </div>
+
+    <div class="page last">
+        <div class="header">
+            <div class="header-title">LGU Youth &amp; Sports Youth Profile Form</div>
+            <div class="header-subtitle">Barangay: {{ barangay_name }}</div>
+        </div>
+
+        <div class="section-bar">Page 3: Specific Needs (OSY, Unemployed, and IP)</div>
+
+        <div class="subhead">1. OSY Details (Out of School Youth)</div>
+        <table class="form-table">
+            <tr>
+                <td>
+                    <span class="label">Willing to Enroll</span>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in osy_enrollment_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% endfor %}
+                        </tr>
+                    </table>
+                    <span class="label" style="margin-top:10px;">Not willing to Enroll (Reasons: 1, 2, 3)</span>
+                    <table class="write-lines">
+                        <tr><td><span class="write-number">1.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">2.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">3.</span><span class="write-line numbered"></span></td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">2. Unemployed Youth</div>
+        <table class="form-table">
+            <tr>
+                <td width="50%">
+                    <span class="label">Employment and Skills Interest</span>
+                    <table class="check-grid">
+                        <tr><td><span class="check">&#9633;</span> Willing to get a job</td></tr>
+                        <tr><td><span class="check">&#9633;</span> Not willing to be employed</td></tr>
+                        <tr><td><span class="check">&#9633;</span> Willing to acquire new skills or enhance current skills</td></tr>
+                        <tr><td><span class="check">&#9633;</span> Not willing to acquire new skills</td></tr>
+                    </table>
+                    <span class="label" style="margin-top:10px;">Reason if not willing to be employed</span>
+                    <span class="line"></span>
+                </td>
+                <td width="50%">
+                    <span class="label">List of needed skills training: (1, 2, 3)</span>
+                    <table class="write-lines">
+                        <tr><td><span class="write-number">1.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">2.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">3.</span><span class="write-line numbered"></span></td></tr>
+                    </table>
+                    <span class="label" style="margin-top:10px;">Not willing to acquire new skills (Reasons: 1, 2, 3)</span>
+                    <table class="write-lines">
+                        <tr><td><span class="write-number">1.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">2.</span><span class="write-line numbered"></span></td></tr>
+                        <tr><td><span class="write-number">3.</span><span class="write-line numbered"></span></td></tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div class="subhead">3. IP Youth (Indigenous People)</div>
+        <div class="note">Please check what assistance you need from the govt.</div>
+        <table class="form-table">
+            <tr>
+                <td width="50%">
+                    <span class="label">Needed Assistance</span>
+                    <table class="check-grid">
+                        {% for option in ip_assistance_options %}
+                        <tr><td><span class="check">&#9633;</span> {{ option }}</td></tr>
+                        {% endfor %}
+                    </table>
+                    <span class="label" style="margin-top:10px;">Education Level</span>
+                    <table class="check-grid">
+                        {% for option in ip_education_level_options %}
+                        <tr><td><span class="check">&#9633;</span> {{ option }}</td></tr>
+                        {% endfor %}
+                    </table>
+                </td>
+                <td width="50%">
+                    <span class="label">Check what tribe you belong to</span>
+                    <table class="check-grid">
+                        <tr>
+                            {% for option in tribe_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:2 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                    </table>
+                    <span class="label" style="margin-top:10px;">Other tribe / specify</span>
+                    <span class="line medium"></span>
+                </td>
+            </tr>
+        </table>
+
+        <table class="footer-signatures">
+            <tr>
+                <td>
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Signature of Youth Respondent</div>
+                </td>
+                <td>
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Signature of Encoder / LGU Youth and Sports Officer</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="page-number">Page 3 of 3</div>
+    </div>
+</body>
+</html>

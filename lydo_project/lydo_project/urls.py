@@ -41,7 +41,9 @@ urlpatterns = [
     path('api/sports-report/competition-levels-pdf/', views.sports_competition_levels_pdf_api, name='sports_competition_levels_pdf_api'),
     path('api/unemployed_heatmap/', views.unemployed_heatmap_api, name='unemployed_heatmap_api'),
     path('api/forms/youth-profile/<int:bid>/', views.download_barangay_blank_form, name='download_barangay_blank_form'),
+    path('api/forms/youth-profile/<int:bid>/doc/', views.download_barangay_blank_form_doc, name='download_barangay_blank_form_doc'),
     path('api/forms/youth-profile-pack/', views.download_blank_form_pack, name='download_blank_form_pack'),
+    path('api/forms/youth-profile-pack/doc/', views.download_blank_form_doc_pack, name='download_blank_form_doc_pack'),
 
     # Core CRUD
     path('api/youth/', views.youth_api, name='youth_api'),

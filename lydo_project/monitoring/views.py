@@ -21,6 +21,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.models import Count
+from django.template.loader import render_to_string
 from django.utils import timezone
 from .age_rules import age_on_date, is_birthdate_aged_out as _shared_is_birthdate_aged_out, purge_aged_out_youths as _shared_purge_aged_out_youths
 from .models import Youth, Barangay, UserBarangayAssignment, UserAccessLog
@@ -356,6 +357,60 @@ ORGANIZATION_JOINED_FORM_OPTIONS = [
 
 OTHER_SPORTS_LABEL = 'Other Sports'
 OTHER_TALENTS_LABEL = 'Other Talents'
+FORM_RELIGION_OPTIONS = [
+    'Roman Catholic',
+    'Baptist',
+    'Protestant',
+    'Iglesia ni Cristo',
+    'Seventh-day Adventist',
+    'Muslim',
+]
+FORM_EMPLOYMENT_STATUS_OPTIONS = [
+    'Regular',
+    'Contractual',
+    'Justified/Job Order',
+    'Casual',
+    'On-call/Seasonal',
+]
+FORM_VOTER_LAST_TIME_OPTIONS = [
+    'May 12, 2025 - 2025 National and Local Elections',
+    'October 30, 2023 - 2023 Barangay and Sangguniang Kabataan Elections',
+    'May 9, 2022 - 2022 National and Local Elections',
+]
+FORM_ASSISTANCE_CATEGORY_OPTIONS = [
+    '5.1 OSY (Out of School Youth)',
+    '5.2 IP Youth (Indigenous People)',
+    '5.3 Unemployed',
+    '5.4 Youth with Special Needs / Differently-abled',
+]
+FORM_SPECIAL_NEED_ASSISTANCE_OPTIONS = [
+    'Mental/Emotional Health',
+    'Others',
+]
+FORM_OSY_ENROLLMENT_OPTIONS = [
+    'Elementary',
+    'High School',
+    'College',
+    'Vocational',
+]
+FORM_IP_ASSISTANCE_OPTIONS = [
+    'Education',
+    'Employment',
+    'Etc.',
+]
+FORM_IP_EDUCATION_LEVEL_OPTIONS = [
+    'College',
+    'High School',
+    'Elementary',
+]
+FORM_YOUTH_CLASSIFICATION_OPTIONS = [
+    'In School Youth (ISY)',
+    'Out of School Youth (OSY)',
+    'Disabled Youth (PWD)',
+    'IP Youth (IP)',
+    'Working Youth (WK)',
+    'Unemployed Youth (UY)',
+]
 
 
 def _choice_labels(field_name):
@@ -386,6 +441,15 @@ def _build_blank_form_context(barangay_name):
         'sports_preference_options': sorted(SPORT_PREFERENCE_OPTIONS, key=str.casefold),
         'sports_competition_level_options': SPORT_COMPETITION_LEVEL_OPTIONS,
         'talent_preference_options': sorted(TALENT_PREFERENCE_OPTIONS, key=str.casefold),
+        'religion_options': FORM_RELIGION_OPTIONS,
+        'employment_status_options': FORM_EMPLOYMENT_STATUS_OPTIONS,
+        'voter_last_time_options': FORM_VOTER_LAST_TIME_OPTIONS,
+        'assistance_category_options': FORM_ASSISTANCE_CATEGORY_OPTIONS,
+        'special_need_assistance_options': FORM_SPECIAL_NEED_ASSISTANCE_OPTIONS,
+        'osy_enrollment_options': FORM_OSY_ENROLLMENT_OPTIONS,
+        'ip_assistance_options': FORM_IP_ASSISTANCE_OPTIONS,
+        'ip_education_level_options': FORM_IP_EDUCATION_LEVEL_OPTIONS,
+        'youth_classification_options': FORM_YOUTH_CLASSIFICATION_OPTIONS,
     }
 
 
@@ -1139,10 +1203,11 @@ def _draw_wrapped_text(pdf, x, top, text, max_width, size=10, bold=False, color=
     return top + (len(lines) * leading)
 
 
-def _draw_line_field(pdf, x, top, width, label, line_y_offset=28):
+def _draw_line_field(pdf, x, top, width, label, line_y_offset=28, line_width_ratio=0.84):
     pdf.text(x, pdf.page_height - top - 9, label, size=8.5, bold=True, color=(0.26, 0.34, 0.47))
     baseline_y = pdf.page_height - top - line_y_offset
-    pdf.line(x, baseline_y, x + width, baseline_y, width=0.8, color=(0.35, 0.42, 0.55))
+    visible_width = max(32, width * line_width_ratio)
+    pdf.line(x, baseline_y, x + visible_width, baseline_y, width=0.8, color=(0.35, 0.42, 0.55))
     return top + line_y_offset + 12
 
 
@@ -1158,6 +1223,39 @@ def _draw_multiline_field(pdf, x, top, width, height, label, lines=4):
         y = pdf.page_height - line_top
         pdf.line(inner_left, y, inner_right, y, width=0.5, color=(0.86, 0.90, 0.95))
     return box_top + height + 10
+
+
+def _draw_write_in_lines(
+    pdf,
+    x,
+    top,
+    width,
+    title,
+    count=3,
+    include_checkbox=False,
+    size=8.5,
+    row_gap=8,
+    show_numbers=False,
+    line_width_ratio=0.82,
+):
+    if title:
+        top = _draw_wrapped_text(pdf, x, top, title, width, size=size, bold=True, color=(0.10, 0.22, 0.44))
+        top += 5
+    checkbox_size = 9
+    for index in range(count):
+        baseline_y = pdf.page_height - top - 17
+        line_start_x = x
+        if include_checkbox:
+            box_y = baseline_y - (checkbox_size / 2)
+            pdf.rect(x, box_y, checkbox_size, checkbox_size, stroke=(0.32, 0.40, 0.52), line_width=0.8)
+            line_start_x = x + checkbox_size + 8
+        elif show_numbers:
+            pdf.text(x, baseline_y + 3, f"{index + 1}.", size=8.1, bold=True, color=(0.26, 0.34, 0.47))
+            line_start_x = x + 18
+        visible_width = max(48, (x + width - line_start_x) * line_width_ratio)
+        pdf.line(line_start_x, baseline_y, line_start_x + visible_width, baseline_y, width=0.8, color=(0.35, 0.42, 0.55))
+        top += 24 + row_gap
+    return top
 
 
 def _draw_checkbox_item(pdf, x, top, label, max_width, size=9.5):
@@ -1232,56 +1330,71 @@ def _draw_section_banner(pdf, top, title):
 def _build_blank_form_pdf(barangay_name, include_logo=False):
     context = _build_blank_form_context(barangay_name)
     pdf = _SimplePdf()
-    total_pages = 2
+    total_pages = 3
     content_width = pdf.page_width - 72
     half_gap = 18
     half_width = (content_width - half_gap) / 2
     left_x = 36
     right_x = left_x + half_width + half_gap
+    third_gap = 12
+    third_width = (content_width - (third_gap * 2)) / 3
+    center_x = left_x + third_width + third_gap
+    far_right_x = center_x + third_width + third_gap
 
-    # Page 1: Personal information + education and work
+    # Page 1: Personal, educational, and employment background
     pdf.add_page()
     _draw_page_header(pdf, context['barangay_name'], 1, total_pages, include_logo=include_logo)
     top = 66
-    top = _draw_section_banner(pdf, top, "PERSONAL INFORMATION")
+    top = _draw_section_banner(pdf, top, "PAGE 1: PERSONAL, EDUCATIONAL, AND EMPLOYMENT BACKGROUND")
+    top = _draw_checkbox_list(
+        pdf,
+        left_x,
+        top,
+        content_width,
+        "Youth Classification (check all that apply)",
+        context['youth_classification_options'],
+        columns=3,
+        size=7.8,
+        row_gap=3,
+        col_gap=10,
+    )
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top + 4,
+        "1. Personal Information",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 8
     row_top = top
-    family_width = 182
-    given_width = 182
-    middle_width = content_width - family_width - given_width - 24
-    _draw_line_field(pdf, left_x, row_top, family_width, "Family Name", line_y_offset=24)
-    _draw_line_field(pdf, left_x + family_width + 12, row_top, given_width, "Given Name", line_y_offset=24)
+    _draw_line_field(pdf, left_x, row_top, third_width, "First Name", line_y_offset=22)
+    _draw_line_field(pdf, center_x, row_top, third_width, "Middle Initial", line_y_offset=22)
     top = _draw_line_field(
         pdf,
-        left_x + family_width + given_width + 24,
+        far_right_x,
         row_top,
-        middle_width,
-        "Middle Initial",
-        line_y_offset=24,
+        third_width,
+        "Last Name",
+        line_y_offset=22,
     )
     row_top = top
-    _draw_line_field(pdf, left_x, row_top, 150, "Birthdate", line_y_offset=24)
-    _draw_line_field(pdf, left_x + 170, row_top, 70, "Age", line_y_offset=24)
+    _draw_line_field(pdf, left_x, row_top, 78, "Age", line_y_offset=22)
+    _draw_line_field(pdf, left_x + 96, row_top, 132, "Birthday", line_y_offset=22)
     sex_bottom = _draw_checkbox_list(
         pdf,
-        left_x + 265,
+        left_x + 250,
         row_top,
-        128,
+        110,
         "Sex",
         ["Male", "Female"],
         columns=2,
-        size=8.8,
+        size=8.3,
         row_gap=3,
         col_gap=6,
     )
-    mobile_bottom = _draw_line_field(
-        pdf,
-        left_x + family_width + given_width + 24,
-        row_top,
-        middle_width,
-        "Mobile Number",
-        line_y_offset=24,
-    )
-    top = max(sex_bottom, mobile_bottom, row_top + 36) + 2
+    top = max(sex_bottom, row_top + 34) + 2
     top = _draw_checkbox_list(
         pdf,
         left_x,
@@ -1290,59 +1403,111 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         "Civil Status",
         context['civil_status_options'],
         columns=5,
-        size=8.4,
+        size=8.0,
         row_gap=3,
         col_gap=8,
     )
+    top = _draw_checkbox_list(
+        pdf,
+        left_x,
+        top + 2,
+        content_width,
+        "Religion",
+        context['religion_options'],
+        columns=3,
+        size=7.8,
+        row_gap=3,
+        col_gap=8,
+    )
+    top = _draw_line_field(pdf, left_x, top + 2, 178, "Others", line_y_offset=20)
     row_top = top
-    _draw_line_field(pdf, left_x, row_top, half_width, "Religion", line_y_offset=24)
-    top = _draw_line_field(pdf, right_x, row_top, half_width, "Purok", line_y_offset=24)
-    row_top = top
-    _draw_line_field(pdf, left_x, row_top, half_width, "Barangay", line_y_offset=24)
-    pdf.text(left_x + 2, pdf.page_height - row_top - 23, context['barangay_name'], size=9.5, bold=True, color=(0.14, 0.19, 0.27))
-    _draw_line_field(pdf, right_x, row_top, half_width, "Municipality", line_y_offset=24)
-    pdf.text(right_x + 2, pdf.page_height - row_top - 23, context['municipality_name'], size=9.5, bold=True, color=(0.14, 0.19, 0.27))
-    top = row_top + 30
-    row_top = top
-    _draw_line_field(pdf, left_x, row_top, half_width, "Province", line_y_offset=24)
-    pdf.text(left_x + 2, pdf.page_height - row_top - 23, context['province_name'], size=9.5, bold=True, color=(0.14, 0.19, 0.27))
-    _draw_line_field(pdf, right_x, row_top, half_width, "Email Address", line_y_offset=24)
-    top = row_top + 30
+    _draw_line_field(pdf, left_x, row_top, 86, "House No.", line_y_offset=22)
+    _draw_line_field(pdf, left_x + 102, row_top, 128, "Sitio / Purok", line_y_offset=22)
+    _draw_line_field(pdf, left_x + 246, row_top, 146, "Street Name (if any)", line_y_offset=22)
+    _draw_line_field(pdf, left_x + 408, row_top, 115, "Barangay", line_y_offset=22)
+    pdf.text(left_x + 410, pdf.page_height - row_top - 21, context['barangay_name'], size=8.8, bold=True, color=(0.14, 0.19, 0.27))
+    top = row_top + 28
+    top = _draw_line_field(pdf, left_x, top, content_width, "Profile Link (Social Media Account)", line_y_offset=22)
 
     top += 10
-    top = _draw_section_banner(pdf, top, "EDUCATION AND WORK")
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "2. Educational Background",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 6
     top = _draw_checkbox_list(
         pdf,
         left_x,
         top,
         content_width,
-        "Highest Education",
+        "Highest Educational Level Attained",
         context['education_level_options'],
         columns=4,
-        size=8.2,
-        row_gap=4,
+        size=7.8,
+        row_gap=3,
     )
-    row_top = top + 2
-    _draw_line_field(pdf, left_x, row_top, half_width, "Course / Degree", line_y_offset=24)
-    top = _draw_line_field(pdf, right_x, row_top, half_width, "School / University", line_y_offset=24)
-    row_top = top
-    _draw_line_field(pdf, left_x, row_top, half_width, "Work Status", line_y_offset=24)
-    scholarship_bottom = _draw_checkbox_list(
-        pdf,
-        right_x,
-        row_top,
-        half_width,
-        "Scholarship",
-        ["Scholarship Beneficiary"],
-        columns=1,
-        size=8.6,
-        row_gap=4,
-    )
-    top = max(row_top + 36, scholarship_bottom)
-    top = _draw_line_field(pdf, right_x, top + 2, half_width, "Scholarship Program", line_y_offset=24)
+    row_top = top + 4
+    row_top = _draw_wrapped_text(pdf, left_x, row_top, "College", half_width, size=8.8, bold=True, color=(0.10, 0.22, 0.44)) + 2
+    left_block_bottom = _draw_line_field(pdf, left_x, row_top, half_width, "Course Graduated", line_y_offset=20)
+    left_block_bottom = _draw_line_field(pdf, left_x, left_block_bottom, half_width, "Year Graduated", line_y_offset=20)
+    left_block_bottom += 4
+    left_block_bottom = _draw_wrapped_text(pdf, left_x, left_block_bottom, "College Level", half_width, size=8.8, bold=True, color=(0.10, 0.22, 0.44)) + 2
+    left_block_bottom = _draw_line_field(pdf, left_x, left_block_bottom, half_width, "Year Level", line_y_offset=20)
 
-    top += 8
-    top = _draw_section_banner(pdf, top, "CIVIC AND OTHER")
+    row_top = top + 4
+    row_top = _draw_wrapped_text(pdf, right_x, row_top, "Master's Degree", half_width, size=8.8, bold=True, color=(0.10, 0.22, 0.44)) + 2
+    right_block_bottom = _draw_line_field(pdf, right_x, row_top, half_width, "Course Graduated", line_y_offset=20)
+    right_block_bottom = _draw_line_field(pdf, right_x, right_block_bottom, half_width, "Year Graduated", line_y_offset=20)
+    right_block_bottom += 4
+    right_block_bottom = _draw_wrapped_text(pdf, right_x, right_block_bottom, "Doctoral", half_width, size=8.8, bold=True, color=(0.10, 0.22, 0.44)) + 2
+    right_block_bottom = _draw_line_field(pdf, right_x, right_block_bottom, half_width, "Course Graduated", line_y_offset=20)
+    right_block_bottom = _draw_line_field(pdf, right_x, right_block_bottom, half_width, "Year Graduated", line_y_offset=20)
+    top = max(left_block_bottom, right_block_bottom) + 8
+
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "3. Employment Background (For employed only)",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 6
+    top = _draw_line_field(pdf, left_x, top, content_width, "Name of Company", line_y_offset=22)
+    _draw_checkbox_list(
+        pdf,
+        left_x,
+        top + 2,
+        content_width,
+        "Status",
+        context['employment_status_options'],
+        columns=3,
+        size=7.8,
+        row_gap=3,
+        col_gap=8,
+    )
+
+    # Page 2: Civic engagement and special categories
+    pdf.add_page()
+    _draw_page_header(pdf, context['barangay_name'], 2, total_pages, include_logo=include_logo)
+    top = 66
+    top = _draw_section_banner(pdf, top, "PAGE 2: CIVIC ENGAGEMENT AND SPECIAL CATEGORIES")
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "4. Community / Civic Engagement",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 6
     row_top = top
     left_bottom = _draw_checkbox_list(
         pdf,
@@ -1352,33 +1517,54 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         "Voter Status",
         [
             "SK Voter",
-            "National Voter",
-            "Voted in Last SK Election",
+            "Local/National Voter",
         ],
         columns=1,
-        size=8.1,
+        size=8.2,
         row_gap=3,
     )
-    right_bottom = _draw_checkbox_list(
+    right_bottom = _draw_write_in_lines(
         pdf,
         right_x,
         row_top,
         half_width,
-        "4Ps and Family",
-        ["4Ps Beneficiary"],
+        "When was the last time you voted?",
+        count=3,
+        include_checkbox=False,
+        size=8.2,
+        row_gap=6,
+        show_numbers=True,
+        line_width_ratio=0.62,
+    )
+    right_bottom = _draw_checkbox_list(
+        pdf,
+        right_x,
+        right_bottom + 2,
+        half_width,
+        "",
+        ["Never voted"],
         columns=1,
         size=8.1,
         row_gap=3,
     )
-    right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, half_width, "Number of Children", line_y_offset=22)
     top = max(left_bottom, right_bottom) + 6
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "4.a KK Assembly Participation",
+        content_width,
+        size=9.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 4
     row_top = top
     left_bottom = _draw_checkbox_list(
         pdf,
         left_x,
         row_top,
         half_width,
-        "KK Assembly Attendance",
+        "Participation",
         ["Attended KK Assembly", "Did not attend"],
         columns=1,
         size=8.1,
@@ -1398,80 +1584,62 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
     )
     right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, half_width, "Other reason / notes", line_y_offset=22)
     top = max(left_bottom, right_bottom) + 6
-    _draw_checkbox_list(
+    top = _draw_write_in_lines(
         pdf,
         left_x,
         top,
         content_width,
-        "Organizations Joined",
-        context['organization_joined_options'],
-        columns=2,
-        size=6.1,
-        row_gap=2,
-        col_gap=10,
+        "4.b Organization Joined",
+        count=3,
+        include_checkbox=False,
+        size=9.2,
+        row_gap=6,
+        show_numbers=True,
+        line_width_ratio=0.72,
     )
 
-    # Page 2: Groups and needs + signatures
-    pdf.add_page()
-    _draw_page_header(pdf, context['barangay_name'], 2, total_pages, include_logo=include_logo)
-    top = 66
-    top = _draw_section_banner(pdf, top, "GROUPS AND NEEDS")
+    top += 8
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "5. Assistance needed from the Government / Non-Government / People's Organization / Private Sector",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 2
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "(Refer also to Page 3)",
+        content_width,
+        size=8.0,
+        color=(0.45, 0.52, 0.62),
+    ) + 4
     top = _draw_checkbox_list(
         pdf,
         left_x,
         top,
         content_width,
-        "Youth Classification",
-        [
-            "In School Youth",
-            "Out of School Youth",
-            "Working Youth",
-            "Unemployed Youth",
-            "Indigenous People Youth",
-            "Youth with Disability",
-        ],
-        columns=3,
+        "Check the applicable categories",
+        context['assistance_category_options'],
+        columns=2,
         size=8.4,
         row_gap=3,
         col_gap=10,
     )
-    top += 4
-    row_top = top
-    left_bottom = _draw_checkbox_list(
-        pdf,
-        left_x,
-        row_top,
-        half_width,
-        "Out of School Youth Details",
-        [
-            "Willing to enroll",
-            "Not willing to enroll",
-            *context['osy_program_options'],
-        ],
-        columns=2,
-        size=8.0,
-        row_gap=3,
-        col_gap=8,
-    )
-    left_bottom = _draw_line_field(
-        pdf,
-        left_x,
-        left_bottom + 2,
-        half_width,
-        "Reason if not enrolling",
-        line_y_offset=24,
-    )
-    top = left_bottom + 6
     top = _draw_checkbox_list(
         pdf,
         left_x,
-        top,
+        top + 4,
         content_width,
-        "Specific Needs",
-        ["Mark if not applicable", *context['specific_needs_options']],
-        columns=4,
-        size=7.2,
-        row_gap=2,
+        "Youth with Special Needs / Differently-abled",
+        context['special_need_assistance_options'],
+        columns=2,
+        size=8.1,
+        row_gap=3,
         col_gap=10,
     )
     top = _draw_line_field(
@@ -1479,89 +1647,170 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         left_x,
         top + 2,
         content_width,
-        "Others (if not above, specify youth needs)",
-        line_y_offset=24,
+        "Others (please specify)",
+        line_y_offset=22,
     )
-    cultural_top = top + 8
-    left_bottom = _draw_checkbox_list(
+
+    # Page 3: Specific needs for OSY, unemployed, and IP youth
+    pdf.add_page()
+    _draw_page_header(pdf, context['barangay_name'], 3, total_pages, include_logo=include_logo)
+    top = 66
+    top = _draw_section_banner(pdf, top, "PAGE 3: SPECIFIC NEEDS (OSY, UNEMPLOYED, AND IP)")
+    top = _draw_wrapped_text(
         pdf,
         left_x,
-        cultural_top,
-        half_width,
-        "7 Tribes / Indigenous Group",
-        ["Mark if not part of the 7 tribes", *context['tribe_options']],
-        columns=3,
-        size=7.6,
-        row_gap=2,
-        col_gap=6,
-    )
-    left_bottom = _draw_line_field(pdf, left_x, left_bottom + 2, half_width, "Selected Tribe", line_y_offset=24)
-    right_bottom = _draw_checkbox_list(
-        pdf,
-        right_x,
-        cultural_top,
-        half_width,
-        "Muslim Group",
-        ["Mark if not a Muslim", *context['muslim_group_options']],
-        columns=3,
-        size=7.5,
-        row_gap=2,
-        col_gap=6,
-    )
-    right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, half_width, "Selected Group", line_y_offset=24)
-    preference_top = max(left_bottom, right_bottom) + 16
-    preference_bottom_left = _draw_checkbox_list(
+        top,
+        "1. OSY Details (Out of School Youth)",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 6
+    top = _draw_checkbox_list(
         pdf,
         left_x,
-        preference_top,
-        half_width,
-        "Talent / Sports Preference - Talents",
-        context['talent_preference_options'],
-        columns=2,
-        size=6.9,
-        row_gap=2,
-        col_gap=8,
-    )
-    preference_bottom_left = _draw_line_field(
-        pdf,
-        left_x,
-        preference_bottom_left + 2,
-        half_width,
-        "Other Talent Preference",
-        line_y_offset=24,
-    )
-    right_pref_top = preference_top
-    preference_bottom_right = _draw_checkbox_list(
-        pdf,
-        right_x,
-        right_pref_top,
-        half_width,
-        "Levels of Sports Competition Played",
-        context['sports_competition_level_options'],
-        columns=2,
+        top,
+        content_width,
+        "Willing to Enroll",
+        context['osy_enrollment_options'],
+        columns=4,
         size=7.8,
         row_gap=3,
         col_gap=8,
     )
-    preference_bottom_right = _draw_line_field(
-        pdf,
-        right_x,
-        preference_bottom_right + 2,
-        half_width,
-        "Other Sports / Competition Notes",
-        line_y_offset=24,
-    )
-    sports_write_top = max(preference_bottom_left, preference_bottom_right) + 14
-    sports_write_bottom = _draw_multiline_field(
+    top = _draw_write_in_lines(
         pdf,
         left_x,
-        sports_write_top,
+        top + 4,
         content_width,
-        96,
-        "Sports Preference(s) / Write chosen sport(s)",
-        lines=5,
+        "Not willing to Enroll (Reasons: 1, 2, 3)",
+        count=3,
+        include_checkbox=False,
+        size=8.4,
+        row_gap=6,
+        show_numbers=True,
+        line_width_ratio=0.68,
     )
-    signature_top = max(sports_write_bottom + 24, pdf.page_height - 156)
+
+    top += 6
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "2. Unemployed Youth",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 6
+    left_bottom = _draw_checkbox_list(
+        pdf,
+        left_x,
+        top,
+        half_width,
+        "Employment Interest",
+        [
+            "Willing to get a job",
+            "Not willing to be employed",
+            "Willing to acquire new skills or enhance current skills",
+            "Not willing to acquire new skills",
+        ],
+        columns=1,
+        size=7.8,
+        row_gap=3,
+    )
+    left_bottom = _draw_line_field(
+        pdf,
+        left_x,
+        left_bottom + 2,
+        half_width,
+        "Reason if not willing to be employed",
+        line_y_offset=22,
+    )
+    right_bottom = _draw_write_in_lines(
+        pdf,
+        right_x,
+        top,
+        half_width,
+        "List of needed skills training: (1, 2, 3)",
+        count=3,
+        include_checkbox=False,
+        size=8.0,
+        row_gap=6,
+        show_numbers=True,
+        line_width_ratio=0.66,
+    )
+    right_bottom = _draw_write_in_lines(
+        pdf,
+        right_x,
+        right_bottom + 4,
+        half_width,
+        "If not willing to acquire new skills (Reasons: 1, 2, 3)",
+        count=3,
+        include_checkbox=False,
+        size=8.0,
+        row_gap=6,
+        show_numbers=True,
+        line_width_ratio=0.66,
+    )
+
+    top = max(left_bottom, right_bottom) + 10
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "3. IP Youth (Indigenous People)",
+        content_width,
+        size=10.2,
+        bold=True,
+        color=(0.10, 0.22, 0.44),
+    ) + 2
+    top = _draw_wrapped_text(
+        pdf,
+        left_x,
+        top,
+        "Note: Please check what assistance you need from the govt.",
+        content_width,
+        size=8.0,
+        color=(0.45, 0.52, 0.62),
+    ) + 4
+    left_bottom = _draw_checkbox_list(
+        pdf,
+        left_x,
+        top,
+        half_width,
+        "Needed Assistance",
+        context['ip_assistance_options'],
+        columns=1,
+        size=8.0,
+        row_gap=3,
+    )
+    left_bottom = _draw_checkbox_list(
+        pdf,
+        left_x,
+        left_bottom + 2,
+        half_width,
+        "Education Level",
+        context['ip_education_level_options'],
+        columns=1,
+        size=8.0,
+        row_gap=3,
+    )
+    right_bottom = _draw_checkbox_list(
+        pdf,
+        right_x,
+        top,
+        half_width,
+        "Check what tribe you belong to",
+        context['tribe_options'],
+        columns=2,
+        size=7.7,
+        row_gap=3,
+        col_gap=8,
+    )
+    right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, 240, "Other tribe / specify", line_y_offset=22)
+
+    signature_top = max(max(left_bottom, right_bottom) + 44, pdf.page_height - 122)
     signature_line_y = pdf.page_height - signature_top
     label_top = signature_top - 26
     pdf.line(left_x, signature_line_y, left_x + half_width - 10, signature_line_y, width=0.8, color=(0.35, 0.42, 0.55))
@@ -1588,6 +1837,61 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
     return pdf.build()
 
 
+def _build_blank_form_doc_html(barangay_name):
+    """Render the blank youth form HTML used as the source for Word export."""
+    context = _build_blank_form_context(barangay_name)
+    return render_to_string('youth_profile_download_doc.html', context)
+
+
+def _build_blank_form_docx(barangay_name):
+    """Build a real .docx package that Word can open as a native document."""
+    doc_html = _build_blank_form_doc_html(barangay_name).encode('utf-8')
+    docx_buffer = io.BytesIO()
+
+    content_types_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="html" ContentType="text/html"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>
+"""
+
+    package_rels_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>
+"""
+
+    document_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+            xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:altChunk r:id="htmlChunk1"/>
+    <w:sectPr>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:top="648" w:right="648" w:bottom="792" w:left="648" w:header="708" w:footer="708" w:gutter="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>
+"""
+
+    document_rels_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="htmlChunk1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="afchunk.html"/>
+</Relationships>
+"""
+
+    with zipfile.ZipFile(docx_buffer, 'w', zipfile.ZIP_DEFLATED) as docx_file:
+        docx_file.writestr('[Content_Types].xml', content_types_xml.encode('utf-8'))
+        docx_file.writestr('_rels/.rels', package_rels_xml.encode('utf-8'))
+        docx_file.writestr('word/document.xml', document_xml.encode('utf-8'))
+        docx_file.writestr('word/_rels/document.xml.rels', document_rels_xml.encode('utf-8'))
+        docx_file.writestr('word/afchunk.html', doc_html)
+
+    return docx_buffer.getvalue()
+
+
 @login_required(login_url='/login/')
 def download_barangay_blank_form(request, bid):
     """Download one blank youth intake form PDF for the selected barangay."""
@@ -1599,6 +1903,24 @@ def download_barangay_blank_form(request, bid):
     pdf_bytes = _build_blank_form_pdf(barangay.name, include_logo=True)
     filename = f"Youth_Profile_Form_{_safe_export_name(barangay.name)}.pdf"
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required(login_url='/login/')
+def download_barangay_blank_form_doc(request, bid):
+    """Download one blank youth intake form as a real Word .docx file."""
+    _seed_barangays()
+    barangay = get_object_or_404(Barangay, id=bid)
+    access_error = _assert_barangay_access(request, barangay)
+    if access_error:
+        return access_error
+    docx_bytes = _build_blank_form_docx(barangay.name)
+    filename = f"Youth_Profile_Form_{_safe_export_name(barangay.name)}.docx"
+    response = HttpResponse(
+        docx_bytes,
+        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
@@ -1623,6 +1945,29 @@ def download_blank_form_pack(request):
     zip_buffer.seek(0)
     response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename="barangay_youth_profile_forms.zip"'
+    return response
+
+
+@login_required(login_url='/login/')
+def download_blank_form_doc_pack(request):
+    """Download a ZIP pack with one real Word .docx blank youth form per barangay."""
+    if not _is_system_admin(request.user):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    _seed_barangays()
+    barangays = list(Barangay.objects.all().order_by('name'))
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for index, barangay in enumerate(barangays, start=1):
+            safe_name = _safe_export_name(barangay.name)
+            folder_name = f"{index:02d}_{safe_name}"
+            file_name = f"Youth_Profile_Form_{safe_name}.docx"
+            zip_path = f"{folder_name}/{file_name}"
+            zip_file.writestr(zip_path, _build_blank_form_docx(barangay.name))
+
+    zip_buffer.seek(0)
+    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename="barangay_youth_profile_forms_docx.zip"'
     return response
 
 

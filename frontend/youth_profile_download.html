@@ -314,8 +314,24 @@
         </div>
 
         <div class="note">
-            Fill out all applicable information. Check the appropriate boxes for classification items such as
-            <strong>In School Youth</strong> and <strong>Out of School Youth</strong>.
+            Start by checking the youth classification, then fill out all applicable information in the sections below.
+            Check all boxes that apply to the youth respondent.
+        </div>
+
+        <div class="section">
+            <div class="section-title">Youth Classification</div>
+            <div class="section-body">
+                <div class="check-card">
+                    <div class="check-group">
+                        <label>Check all that apply</label>
+                        <div class="checks cols-3">
+                            {% for option in youth_classification_options %}
+                            <label class="check-item"><input type="checkbox" name="youth_classification_{{ forloop.counter }}"> {{ option }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="section">
@@ -384,22 +400,6 @@
         <div class="section">
             <div class="section-title">Groups and Needs</div>
             <div class="section-body">
-                <div class="check-card">
-                    <div class="check-group">
-                        <label>Youth Classification</label>
-                        <div class="checks cols-3">
-                            <label class="check-item"><input type="checkbox" name="is_in_school"> In School Youth</label>
-                            <label class="check-item"><input type="checkbox" name="is_osy"> Out of School Youth</label>
-                            <label class="check-item"><input type="checkbox" name="is_working_youth"> Working Youth</label>
-                            <label class="check-item"><input type="checkbox" name="is_unemployed"> Unemployed Youth</label>
-                            <label class="check-item"><input type="checkbox" name="is_ip"> Indigenous People Youth</label>
-                            <label class="check-item"><input type="checkbox" name="is_pwd"> Youth with Disability</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
                 <div class="grid">
                     <div class="check-card">
                         <div class="check-group">

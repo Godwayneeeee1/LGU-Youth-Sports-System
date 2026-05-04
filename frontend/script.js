@@ -1145,14 +1145,23 @@ function downloadBarangaySummaryPDF() {
 	}).catch(err => alert(err.message));
 }
 
-function downloadBlankYouthForm() {
+window.downloadBlankYouthForm = function downloadBlankYouthForm() {
 	if (!currentBarangayId) return alert('Open a barangay first');
 	window.location.href = `/api/forms/youth-profile/${currentBarangayId}/`;
-}
+};
 
-function downloadAllBlankYouthForms() {
+window.downloadBlankYouthFormDoc = function downloadBlankYouthFormDoc() {
+	if (!currentBarangayId) return alert('Open a barangay first');
+	window.location.href = `/api/forms/youth-profile/${currentBarangayId}/doc/`;
+};
+
+window.downloadAllBlankYouthForms = function downloadAllBlankYouthForms() {
 	window.location.href = '/api/forms/youth-profile-pack/';
-}
+};
+
+window.downloadAllBlankYouthFormsDoc = function downloadAllBlankYouthFormsDoc() {
+	window.location.href = '/api/forms/youth-profile-pack/doc/';
+};
 
 function setYouthBarangaySelection(selectedId = '', selectedLabel = '') {
 	const hiddenInput = $id('barangay_id');
