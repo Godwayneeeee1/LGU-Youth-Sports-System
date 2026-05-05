@@ -79,6 +79,50 @@ def _barangay_account_exists(barangay, exclude_user_id=None):
     return assignments.exists()
 
 
+def _barangay_login_hint_candidates(username):
+    """Return normalized barangay-name candidates from common login naming patterns."""
+    normalized_hint = _normalize_barangay_name(username)
+    compact_hint = ''.join(ch for ch in normalized_hint if ch.isalnum())
+    candidates = {normalized_hint, compact_hint}
+
+    prefixes = ('sk', 'brgy', 'barangay')
+    suffixes = ('sk', 'account')
+    words = normalized_hint.split()
+
+    for prefix in prefixes:
+        if normalized_hint.startswith(f'{prefix} '):
+            candidates.add(normalized_hint[len(prefix):].strip())
+        if compact_hint.startswith(prefix):
+            candidates.add(compact_hint[len(prefix):].strip())
+
+    for suffix in suffixes:
+        if normalized_hint.endswith(f' {suffix}'):
+            candidates.add(normalized_hint[:-(len(suffix) + 1)].strip())
+        if compact_hint.endswith(suffix):
+            candidates.add(compact_hint[:-len(suffix)].strip())
+
+    if len(words) > 1:
+        candidates.add(' '.join(word for word in words if word not in prefixes and word not in suffixes))
+
+    return {candidate for candidate in candidates if candidate}
+
+
+def _find_unassigned_barangay_by_login_hint(username):
+    normalized_hints = _barangay_login_hint_candidates(username)
+    if not normalized_hints:
+        return None
+    _seed_barangays()
+    for barangay in Barangay.objects.all():
+        normalized_barangay = _normalize_barangay_name(barangay.name)
+        compact_barangay = ''.join(ch for ch in normalized_barangay if ch.isalnum())
+        if normalized_barangay not in normalized_hints and compact_barangay not in normalized_hints:
+            continue
+        if not _barangay_account_exists(barangay):
+            return barangay
+        break
+    return None
+
+
 def _log_user_access(request, user):
     """Record a login event and close any prior open sessions for the user."""
     UserAccessLog.objects.filter(user=user, logout_time__isnull=True).update(logout_time=timezone.now())
@@ -2053,7 +2097,18 @@ def login_view(request):
             'barangay_name': assignment.barangay.name if assignment else None,
         })
 
-    return JsonResponse({'error': 'Invalid credentials'}, status=401)
+    missing_barangay_account = _find_unassigned_barangay_by_login_hint(username)
+    if missing_barangay_account is not None:
+        return JsonResponse({
+            'error': "It looks like your barangay doesn't have an account yet. Please request account creation from the LGU Youth & Sports Officer.",
+            'error_code': 'barangay_account_missing',
+            'barangay_name': missing_barangay_account.name,
+        }, status=404)
+
+    return JsonResponse({
+        'error': 'Invalid credentials. Please check your login details or contact the LGU Youth & Sport Officer for a password or username reset.',
+        'error_code': 'invalid_credentials',
+    }, status=401)
 
 
 def logout_view(request):

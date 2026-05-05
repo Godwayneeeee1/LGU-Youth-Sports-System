@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | LGU Youth & Sports</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260427-preference-popup">
+    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260505-download-menu">
     <style>
         .navbar .badge-text, .navbar img[alt="youth"] { display: none !important; }
     </style>
@@ -179,31 +179,65 @@
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Download
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius:var(--r-md);border:1px solid var(--border)!important;font-size:.875rem;">
-                        <li><a class="dropdown-item py-2" href="#" onclick="downloadBarangaySummaryCSV()">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
-                            Export to Excel
+                    <ul class="dropdown-menu dropdown-menu-end download-menu">
+                        <li class="download-menu-label">Barangay Summary</li>
+                        <li><a class="download-menu-item" href="#" onclick="downloadBarangaySummaryCSV()">
+                            <span class="download-menu-icon excel">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
+                            </span>
+                            <span>
+                                <span class="download-menu-title">Export to Excel</span>
+                                <span class="download-menu-sub">Spreadsheet summary</span>
+                            </span>
                         </a></li>
-                        <li><a class="dropdown-item py-2" href="#" onclick="downloadBarangaySummaryPDF()">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            Export as PDF
+                        <li><a class="download-menu-item" href="#" onclick="downloadBarangaySummaryPDF()">
+                            <span class="download-menu-icon pdf">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </span>
+                            <span>
+                                <span class="download-menu-title">Export as PDF</span>
+                                <span class="download-menu-sub">Printable summary</span>
+                            </span>
                         </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item py-2" href="#" onclick="downloadBlankYouthForm()">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-                            Download Blank Youth Form (PDF)
+                        <li class="download-menu-divider"></li>
+                        <li class="download-menu-label">Blank Youth Forms</li>
+                        <li><a class="download-menu-item" href="#" onclick="downloadBlankYouthForm()">
+                            <span class="download-menu-icon form">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+                            </span>
+                            <span>
+                                <span class="download-menu-title">Blank Youth Form</span>
+                                <span class="download-menu-sub">PDF for selected barangay</span>
+                            </span>
                         </a></li>
-                        <li><a class="dropdown-item py-2" href="#" onclick="downloadBlankYouthFormDoc()">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h8"/></svg>
-                            Download Blank Youth Form (Word)
+                        <li><a class="download-menu-item" href="#" onclick="downloadBlankYouthFormDoc()">
+                            <span class="download-menu-icon word">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h8"/></svg>
+                            </span>
+                            <span>
+                                <span class="download-menu-title">Blank Youth Form</span>
+                                <span class="download-menu-sub">Word file for selected barangay</span>
+                            </span>
                         </a></li>
-                        <li class="system-admin-only" style="display:none;"><a class="dropdown-item py-2" href="#" onclick="downloadAllBlankYouthForms()">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download All Barangay Form Pack (PDF)
+                        <li class="download-menu-divider system-admin-only" style="display:none;"></li>
+                        <li class="download-menu-label system-admin-only" style="display:none;">Admin Form Packs</li>
+                        <li class="system-admin-only" style="display:none;"><a class="download-menu-item" href="#" onclick="downloadAllBlankYouthForms()">
+                            <span class="download-menu-icon pack">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </span>
+                            <span>
+                                <span class="download-menu-title">All Barangay Form Pack</span>
+                                <span class="download-menu-sub">PDF archive</span>
+                            </span>
                         </a></li>
-                        <li class="system-admin-only" style="display:none;"><a class="dropdown-item py-2" href="#" onclick="downloadAllBlankYouthFormsDoc()">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:6px;vertical-align:middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download All Barangay Form Pack (Word)
+                        <li class="system-admin-only" style="display:none;"><a class="download-menu-item" href="#" onclick="downloadAllBlankYouthFormsDoc()">
+                            <span class="download-menu-icon pack">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </span>
+                            <span>
+                                <span class="download-menu-title">All Barangay Form Pack</span>
+                                <span class="download-menu-sub">Word archive</span>
+                            </span>
                         </a></li>
                     </ul>
                 </div>

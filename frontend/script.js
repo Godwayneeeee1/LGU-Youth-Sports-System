@@ -1318,6 +1318,47 @@ function checkUserStatus() {
 
 function showLoginModal() { new bootstrap.Modal(document.getElementById('authModal')).show(); }
 
+function showBarangayAccountNotice(options = {}) {
+	const noticeEl = $id('barangay-account-notice');
+	if (!noticeEl) return;
+	const noticeTitle = $id('barangay-account-notice-title-text');
+	const noticeLabel = $id('barangay-account-notice-label');
+	const noticeName = $id('barangay-account-notice-name');
+	const noticeMessage = $id('barangay-account-notice-message');
+	if (noticeTitle) {
+		noticeTitle.textContent = options.title || 'Account Not Yet Created';
+	}
+	if (noticeLabel) {
+		noticeLabel.textContent = options.label || 'Barangay';
+	}
+	if (noticeName) {
+		noticeName.textContent = options.barangayName || 'Selected barangay';
+	}
+	if (noticeMessage) {
+		noticeMessage.textContent = options.message || "It looks like your barangay doesn't have an account yet. Please request account creation from the LGU Youth & Sports Officer.";
+	}
+	noticeEl.hidden = false;
+	noticeEl.setAttribute('aria-hidden', 'false');
+	document.body.style.overflow = 'hidden';
+}
+
+function showInvalidCredentialsNotice(username = '') {
+	showBarangayAccountNotice({
+		title: 'Invalid Credentials',
+		label: 'Account',
+		barangayName: username || 'Login details',
+		message: 'Invalid credentials. Please check your login details or contact the LGU Youth & Sport Officer for a password or username reset.'
+	});
+}
+
+function closeBarangayAccountNotice() {
+	const noticeEl = $id('barangay-account-notice');
+	if (!noticeEl) return;
+	noticeEl.hidden = true;
+	noticeEl.setAttribute('aria-hidden', 'true');
+	document.body.style.overflow = '';
+}
+
 function handleAuth(e) {
 	e.preventDefault();
 	const loadingEl = document.getElementById('login-loading');
@@ -1342,8 +1383,17 @@ function handleAuth(e) {
 		if (data.message) {
 			window.location.href = '/';
 		} else {
-			if (errorDiv && errorMsg) {
-				errorMsg.textContent = data.error || 'Invalid credentials. Please try again.';
+			if (data.error_code === 'barangay_account_missing') {
+				closeBarangayAccountNotice();
+				showBarangayAccountNotice({
+					barangayName: data.barangay_name,
+					message: data.error
+				});
+			} else if (data.error === 'Invalid credentials' || data.error_code === 'invalid_credentials') {
+				closeBarangayAccountNotice();
+				showInvalidCredentialsNotice((document.getElementById('auth-username')?.value || '').trim());
+			} else if (errorDiv && errorMsg) {
+				errorMsg.textContent = data.error || 'Invalid credentials. Please check your login details or contact the LGU Youth & Sport Officer for a password or username reset.';
 				errorDiv.classList.add('show');
 			} else { alert(data.error); }
 			if (loadingEl) loadingEl.style.display = 'none';
@@ -1662,6 +1712,12 @@ function disableBarangayAccount(userId, username) {
 		});
 	});
 }
+
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'Escape') {
+		closeBarangayAccountNotice();
+	}
+});
 
 function enableBarangayAccount(userId, username) {
 	if (!CURRENT_USER || !CURRENT_USER.is_admin) return;
@@ -3271,6 +3327,8 @@ window.showDashboard = showDashboard;
 window.showAdminAccountSection = showAdminAccountSection;
 window.showLoginModal = showLoginModal;
 window.handleAuth = handleAuth;
+window.showBarangayAccountNotice = showBarangayAccountNotice;
+window.closeBarangayAccountNotice = closeBarangayAccountNotice;
 window.togglePasswordField = togglePasswordField;
 window.logout = logout;
 window.openModal = openModal;

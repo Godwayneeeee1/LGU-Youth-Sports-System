@@ -740,6 +740,86 @@ h1,h2,h3,h4,h5,h6 {
     transform: translateY(-1px);
 }
 
+.download-menu {
+    min-width: 340px;
+    padding: 10px;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 18px 42px rgba(15, 37, 88, .16);
+}
+
+.download-menu-label {
+    padding: 7px 10px 5px;
+    color: var(--text-light);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.download-menu-divider {
+    height: 1px;
+    margin: 8px 4px;
+    background: var(--border);
+}
+
+.download-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 56px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    color: var(--navy);
+    text-decoration: none;
+    transition: background .16s ease, transform .16s ease, color .16s ease;
+}
+
+.download-menu-item:hover,
+.download-menu-item:focus {
+    background: #f4f7ff;
+    color: var(--navy);
+    text-decoration: none;
+    transform: translateX(2px);
+}
+
+.download-menu-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex: 0 0 34px;
+}
+
+.download-menu-icon.excel { color: #047857; background: #d1fae5; }
+.download-menu-icon.pdf { color: #be123c; background: #ffe4e6; }
+.download-menu-icon.form { color: #1d4ed8; background: #dbeafe; }
+.download-menu-icon.word { color: #1e40af; background: #e0ecff; }
+.download-menu-icon.pack { color: #7c3aed; background: #ede9fe; }
+
+.download-menu-title,
+.download-menu-sub {
+    display: block;
+}
+
+.download-menu-title {
+    color: var(--navy);
+    font-size: .9rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.download-menu-sub {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: .74rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
 .btn-success-lydo {
     background: linear-gradient(135deg, #10b981, var(--emerald));
     color: #fff;
@@ -1300,6 +1380,144 @@ body.register-page .login-wrapper {
     margin-top: 24px;
     color: var(--text-light);
     font-size: 0.78rem;
+}
+
+.login-notice-modal[hidden] {
+    display: none !important;
+}
+
+.login-notice-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.login-notice-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, .48);
+    backdrop-filter: blur(3px);
+    z-index: 0;
+}
+
+.login-notice-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 480px);
+}
+
+.login-notice-card {
+    width: 100%;
+    border: 1px solid #fb7185;
+    border-radius: 24px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 30px 70px rgba(159, 18, 57, .28);
+}
+
+.login-notice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px 10px;
+    background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
+}
+
+.login-notice-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.login-notice-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .18);
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.login-notice-close {
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-size: 1.8rem;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    opacity: .78;
+}
+
+.login-notice-close:hover {
+    opacity: 1;
+}
+
+.login-notice-body {
+    padding: 10px 22px 18px;
+}
+
+.login-notice-highlight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: #fff1f2;
+    border: 1px solid #fb7185;
+    margin-bottom: 16px;
+}
+
+.login-notice-label {
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #be123c;
+    font-weight: 800;
+}
+
+.login-notice-name {
+    color: #881337;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.login-notice-message {
+    margin: 0;
+    color: var(--navy);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.55;
+}
+
+.login-notice-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 22px 22px;
+}
+
+.login-notice-footer .btn-primary-lydo {
+    background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
+    box-shadow: 0 10px 22px rgba(190, 18, 60, .28);
+}
+
+.login-notice-footer .btn-primary-lydo:hover {
+    box-shadow: 0 14px 28px rgba(190, 18, 60, .34);
 }
 
 .auth-switch {
