@@ -693,6 +693,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 	initAdminBarangayDropdown();
 	initYouthBarangayDropdown();
+	initYouthSortDropdown();
 	initTransferConfirmModal();
 	initDeleteConfirmModal();
 	renderPreferencePopupGroup('sports-preference-options', 'sport-pref', SPORT_PREFERENCE_OPTIONS);
@@ -1234,6 +1235,7 @@ function openBarangay(id, name) {
 	const searchFilter = document.getElementById('searchFilter');
 	if (searchInput) searchInput.value = '';
 	if (searchFilter) searchFilter.value = 'all';
+	updateYouthSortDropdown();
 	updateYouthSearchPlaceholder();
 	filterTable();
 
@@ -1980,6 +1982,39 @@ function submitAdminAccountForm(e) {
 	}).finally(() => {
 		setAdminAccountSubmitState(false);
 	});
+}
+
+function updateYouthSortDropdown() {
+	const select = document.getElementById('searchFilter');
+	const label = document.getElementById('searchFilterButtonText');
+	const menu = document.querySelector('.search-filter-menu');
+	if (!select) return;
+
+	const option = select.options[select.selectedIndex];
+	if (label) label.textContent = option ? option.textContent : 'Sort';
+
+	if (!menu) return;
+	menu.querySelectorAll('[data-search-filter]').forEach(item => {
+		item.classList.toggle('active', item.dataset.searchFilter === select.value);
+	});
+}
+
+function initYouthSortDropdown() {
+	const select = document.getElementById('searchFilter');
+	const menu = document.querySelector('.search-filter-menu');
+	if (!select || !menu || menu.dataset.sortDropdownReady === 'true') return;
+
+	menu.querySelectorAll('[data-search-filter]').forEach(item => {
+		item.addEventListener('click', () => {
+			select.value = item.dataset.searchFilter || 'all';
+			updateYouthSortDropdown();
+			updateYouthSearchPlaceholder();
+			filterTable();
+		});
+	});
+
+	menu.dataset.sortDropdownReady = 'true';
+	updateYouthSortDropdown();
 }
 
 function updateYouthSearchPlaceholder() {
