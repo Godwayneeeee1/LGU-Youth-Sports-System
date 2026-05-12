@@ -115,6 +115,8 @@ class Youth(models.Model):
     scholarship_program = models.CharField(max_length=100, blank=True)
     
     # --- WORK & CIVIC ---
+    employment_company_name = models.CharField(max_length=150, blank=True)
+    employment_company_address = models.CharField(max_length=200, blank=True)
     work_status = models.CharField(max_length=50, blank=True)
     sports_preferences = models.TextField(blank=True, default='[]')
     talent_preferences = models.TextField(blank=True, default='[]')

@@ -1148,20 +1148,20 @@ function downloadBarangaySummaryPDF() {
 
 window.downloadBlankYouthForm = function downloadBlankYouthForm() {
 	if (!currentBarangayId) return alert('Open a barangay first');
-	window.location.href = `/api/forms/youth-profile/${currentBarangayId}/`;
+	window.location.href = `/api/forms/youth-profile/${currentBarangayId}/?_=${Date.now()}`;
 };
 
 window.downloadBlankYouthFormDoc = function downloadBlankYouthFormDoc() {
 	if (!currentBarangayId) return alert('Open a barangay first');
-	window.location.href = `/api/forms/youth-profile/${currentBarangayId}/doc/`;
+	window.location.href = `/api/forms/youth-profile/${currentBarangayId}/doc/?_=${Date.now()}`;
 };
 
 window.downloadAllBlankYouthForms = function downloadAllBlankYouthForms() {
-	window.location.href = '/api/forms/youth-profile-pack/';
+	window.location.href = `/api/forms/youth-profile-pack/?_=${Date.now()}`;
 };
 
 window.downloadAllBlankYouthFormsDoc = function downloadAllBlankYouthFormsDoc() {
-	window.location.href = '/api/forms/youth-profile-pack/doc/';
+	window.location.href = `/api/forms/youth-profile-pack/doc/?_=${Date.now()}`;
 };
 
 function setYouthBarangaySelection(selectedId = '', selectedLabel = '') {
@@ -2159,6 +2159,8 @@ function buildYouthModalDraft() {
 		school_name: val('school_name'),
 		is_scholar: chk('is_scholar'),
 		scholarship_program: val('scholarship_program'),
+		employment_company_name: val('employment_company_name'),
+		employment_company_address: val('employment_company_address'),
 		work_status: val('work_status'),
 		sports_preferences: collectPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS),
 		talent_preferences: collectPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS),
@@ -2228,6 +2230,8 @@ function restoreYouthModalDraft() {
 		'course': draft.course,
 		'school_name': draft.school_name,
 		'scholarship_program': draft.scholarship_program,
+		'employment_company_name': draft.employment_company_name,
+		'employment_company_address': draft.employment_company_address,
 		'work_status': draft.work_status,
 		'sports_preference_other': draft.sports_preference_other,
 		'talent_preference_other': draft.talent_preference_other,
@@ -2329,6 +2333,8 @@ function editYouth(id) {
 			'course': d.course,
 			'school_name': d.school_name,
 			'scholarship_program': d.scholarship_program,
+			'employment_company_name': d.employment_company_name,
+			'employment_company_address': d.employment_company_address,
 			'work_status': d.work_status,
 			'sports_preference_other': d.sports_preference_other,
 			'talent_preference_other': d.talent_preference_other,
@@ -2408,6 +2414,8 @@ function saveYouth(e) {
 		school_name: getVal('school_name'),
 		is_scholar: getCheck('is_scholar'),
 		scholarship_program: getVal('scholarship_program'),
+		employment_company_name: getVal('employment_company_name'),
+		employment_company_address: getVal('employment_company_address'),
 		work_status: getVal('work_status'),
 		sports_preferences: collectPreferenceSelections('sport-pref', SPORT_PREFERENCE_OPTIONS),
 		talent_preferences: collectPreferenceSelections('talent-pref', TALENT_PREFERENCE_OPTIONS),
@@ -3303,8 +3311,10 @@ function viewFullSummary(id) {
 						${detailRow('Level', y.education_level || 'N/A')}
 						${detailRow('Course', d.course || 'N/A')}
 						${detailRow('School', d.school_name || 'N/A')}
-						${detailRow('Work Status', d.work_status || 'N/A')}
 						${detailRow('Scholar', `${fmt(d.is_scholar)} <span style="color:var(--text-muted);font-weight:600;">${d.scholarship_program ? `(${d.scholarship_program})` : '(N/A)'}</span>`)}
+						${detailRow('Company', d.employment_company_name || 'N/A')}
+						${detailRow('Company Address', d.employment_company_address || 'N/A')}
+						${detailRow('Work Status', d.work_status || 'N/A')}
 						${detailRow('Sports', fmtList(d.sports_preferences, d.sports_preference_other, 'Other'))}
 						${detailRow('Competition Levels', fmtList(d.sports_competition_levels || [], '', ''))}
 						${detailRow('Talents', fmtList(d.talent_preferences, d.talent_preference_other, 'Other'))}

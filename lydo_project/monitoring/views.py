@@ -437,15 +437,30 @@ FORM_OSY_ENROLLMENT_OPTIONS = [
     'College',
     'Vocational',
 ]
+FORM_EDUCATION_LEVEL_OPTIONS = [
+    'Elementary',
+    'High School',
+    'Senior High',
+    'Open High School',
+    'ALS',
+    'College',
+    'Masters',
+    'Doctorate',
+]
 FORM_IP_ASSISTANCE_OPTIONS = [
     'Education',
     'Employment',
     'Etc.',
 ]
 FORM_IP_EDUCATION_LEVEL_OPTIONS = [
-    'College',
-    'High School',
     'Elementary',
+    'High School',
+    'Senior High',
+    'Open High School',
+    'ALS',
+    'College',
+    'Masters',
+    'Doctorate',
 ]
 FORM_YOUTH_CLASSIFICATION_OPTIONS = [
     'In School Youth (ISY)',
@@ -475,7 +490,7 @@ def _build_blank_form_context(barangay_name):
         'province_name': 'Bukidnon',
         'generated_on': datetime.date.today().strftime('%B %d, %Y'),
         'civil_status_options': _choice_labels('civil_status'),
-        'education_level_options': _choice_labels('education_level'),
+        'education_level_options': FORM_EDUCATION_LEVEL_OPTIONS,
         'tribe_options': _choice_labels('tribe_name'),
         'muslim_group_options': _choice_labels('muslim_group'),
         'osy_program_options': _choice_labels('osy_program_type'),
@@ -511,28 +526,49 @@ def _normalize_youth_name(value):
     return ' '.join(normalized.casefold().split())
 
 
-@lru_cache(maxsize=1)
-def _organizations_joined_column_available():
-    """Return whether the live database already has the organizations_joined column."""
+def _available_youth_column_names():
+    """Return live youth table columns so new model fields do not break older databases."""
     try:
         with connection.cursor() as cursor:
             columns = connection.introspection.get_table_description(cursor, Youth._meta.db_table)
     except Exception:
-        return False
+        return set()
+
+    names = set()
     for column in columns:
         column_name = getattr(column, 'name', None)
         if column_name is None and column:
             column_name = column[0]
-        if column_name == 'organizations_joined':
-            return True
-    return False
+        if column_name:
+            names.add(column_name)
+    return names
+
+
+def _youth_column_available(field_name):
+    """Return whether a Youth model field exists in the live database table."""
+    try:
+        column_name = Youth._meta.get_field(field_name).column
+    except Exception:
+        return False
+    return column_name in _available_youth_column_names()
+
+
+def _organizations_joined_column_available():
+    """Return whether the live database already has the organizations_joined column."""
+    return _youth_column_available('organizations_joined')
 
 
 def _youth_queryset():
     """Base youth queryset that tolerates older databases missing new columns."""
     queryset = Youth.objects.select_related('barangay')
-    if not _organizations_joined_column_available():
-        queryset = queryset.defer('organizations_joined')
+    deferred_fields = []
+    available_columns = _available_youth_column_names()
+    for model_field in Youth._meta.local_concrete_fields:
+        if model_field.primary_key or model_field.column in available_columns:
+            continue
+        deferred_fields.append(model_field.name)
+    if deferred_fields:
+        queryset = queryset.defer(*deferred_fields)
     return queryset
 
 
@@ -544,14 +580,15 @@ def _organizations_joined_values_for_youth(youth):
 
 def _create_youth_record(fields):
     """Create a youth record even when the database is temporarily behind the model schema."""
-    if _organizations_joined_column_available():
+    if all(_youth_column_available(field_name) for field_name in fields):
         return Youth.objects.create(**fields)
 
     youth = Youth(**fields)
     insert_columns = []
     insert_values = []
+    available_columns = _available_youth_column_names()
     for model_field in Youth._meta.local_concrete_fields:
-        if model_field.primary_key or model_field.name == 'organizations_joined':
+        if model_field.primary_key or model_field.column not in available_columns:
             continue
         insert_columns.append(connection.ops.quote_name(model_field.column))
         insert_values.append(getattr(youth, model_field.attname))
@@ -1471,7 +1508,6 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
     _draw_line_field(pdf, left_x + 408, row_top, 115, "Barangay", line_y_offset=22)
     pdf.text(left_x + 410, pdf.page_height - row_top - 21, context['barangay_name'], size=8.8, bold=True, color=(0.14, 0.19, 0.27))
     top = row_top + 28
-    top = _draw_line_field(pdf, left_x, top, content_width, "Profile Link (Social Media Account)", line_y_offset=22)
 
     top += 10
     top = _draw_wrapped_text(
@@ -1523,7 +1559,8 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         bold=True,
         color=(0.10, 0.22, 0.44),
     ) + 6
-    top = _draw_line_field(pdf, left_x, top, content_width, "Name of Company", line_y_offset=22)
+    top = _draw_line_field(pdf, left_x, top, content_width, "Name of Company", line_y_offset=20)
+    top = _draw_line_field(pdf, left_x, top, content_width, "Address of Company", line_y_offset=20)
     _draw_checkbox_list(
         pdf,
         left_x,
@@ -1596,7 +1633,7 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         pdf,
         left_x,
         top,
-        "4.a KK Assembly Participation",
+        "4.a Katipunan Kabataan Assembly Participation",
         content_width,
         size=9.2,
         bold=True,
@@ -1609,7 +1646,7 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         row_top,
         half_width,
         "Participation",
-        ["Attended KK Assembly", "Did not attend"],
+        ["Attended Katipunan Kabataan Assembly", "Did not attend"],
         columns=1,
         size=8.1,
         row_gap=3,
@@ -1633,7 +1670,7 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         left_x,
         top,
         content_width,
-        "4.b Organization Joined",
+        "4.b Organizations Joined",
         count=3,
         include_checkbox=False,
         size=9.2,
@@ -1836,9 +1873,10 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
         half_width,
         "Education Level",
         context['ip_education_level_options'],
-        columns=1,
+        columns=2,
         size=8.0,
         row_gap=3,
+        col_gap=8,
     )
     right_bottom = _draw_checkbox_list(
         pdf,
@@ -1854,9 +1892,9 @@ def _build_blank_form_pdf(barangay_name, include_logo=False):
     )
     right_bottom = _draw_line_field(pdf, right_x, right_bottom + 2, 240, "Other tribe / specify", line_y_offset=22)
 
-    signature_top = max(max(left_bottom, right_bottom) + 44, pdf.page_height - 122)
+    signature_top = max(max(left_bottom, right_bottom) + 44, pdf.page_height - 86)
     signature_line_y = pdf.page_height - signature_top
-    label_top = signature_top - 26
+    label_top = signature_top + 8
     pdf.line(left_x, signature_line_y, left_x + half_width - 10, signature_line_y, width=0.8, color=(0.35, 0.42, 0.55))
     pdf.line(right_x, signature_line_y, right_x + half_width - 10, signature_line_y, width=0.8, color=(0.35, 0.42, 0.55))
     _draw_wrapped_text(
@@ -1936,6 +1974,14 @@ def _build_blank_form_docx(barangay_name):
     return docx_buffer.getvalue()
 
 
+def _mark_download_no_cache(response):
+    """Prevent browsers/PDF viewers from reusing older generated form files."""
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
+
+
 @login_required(login_url='/login/')
 def download_barangay_blank_form(request, bid):
     """Download one blank youth intake form PDF for the selected barangay."""
@@ -1948,7 +1994,7 @@ def download_barangay_blank_form(request, bid):
     filename = f"Youth_Profile_Form_{_safe_export_name(barangay.name)}.pdf"
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+    return _mark_download_no_cache(response)
 
 
 @login_required(login_url='/login/')
@@ -1966,7 +2012,7 @@ def download_barangay_blank_form_doc(request, bid):
         content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+    return _mark_download_no_cache(response)
 
 
 @login_required(login_url='/login/')
@@ -1989,7 +2035,7 @@ def download_blank_form_pack(request):
     zip_buffer.seek(0)
     response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename="barangay_youth_profile_forms.zip"'
-    return response
+    return _mark_download_no_cache(response)
 
 
 @login_required(login_url='/login/')
@@ -2012,7 +2058,7 @@ def download_blank_form_doc_pack(request):
     zip_buffer.seek(0)
     response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename="barangay_youth_profile_forms_docx.zip"'
-    return response
+    return _mark_download_no_cache(response)
 
 
 # Authentication views
@@ -2780,6 +2826,8 @@ def youth_api(request):
                     'school_name':              y.school_name,
                     'is_scholar':               y.is_scholar,
                     'scholarship_program':      y.scholarship_program,
+                    'employment_company_name':  y.employment_company_name if _youth_column_available('employment_company_name') else '',
+                    'employment_company_address': y.employment_company_address if _youth_column_available('employment_company_address') else '',
                     'work_status':              y.work_status,
                     'sports_preferences':       _parse_preference_list(y.sports_preferences, SPORT_PREFERENCE_OPTIONS),
                     'talent_preferences':       _parse_preference_list(y.talent_preferences, TALENT_PREFERENCE_OPTIONS),
@@ -2932,6 +2980,10 @@ def youth_api(request):
                 'is_4ps':           get_bool('is_4ps'),
                 'number_of_children': get_int('number_of_children'),
             }
+            if _youth_column_available('employment_company_name'):
+                fields['employment_company_name'] = str(data.get('employment_company_name') or '').strip()
+            if _youth_column_available('employment_company_address'):
+                fields['employment_company_address'] = str(data.get('employment_company_address') or '').strip()
             if _organizations_joined_column_available():
                 fields['organizations_joined'] = organizations_joined
 

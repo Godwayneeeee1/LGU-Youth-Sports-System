@@ -191,7 +191,7 @@
         .footer-signatures {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 52px;
+            margin-top: 92px;
         }
 
         .footer-signatures td {
@@ -362,12 +362,6 @@
                     <span class="line">{{ barangay_name }}</span>
                 </td>
             </tr>
-            <tr>
-                <td colspan="4">
-                    <span class="label">Profile Link (Social Media Account)</span>
-                    <span class="line"></span>
-                </td>
-            </tr>
         </table>
 
         <div class="subhead">2. Educational Background</div>
@@ -426,8 +420,12 @@
         <div class="subhead">3. Employment Background (For employed only)</div>
         <table class="form-table">
             <tr>
-                <td>
+                <td width="50%">
                     <span class="label">Name of Company</span>
+                    <span class="line"></span>
+                </td>
+                <td width="50%">
+                    <span class="label">Address of Company</span>
                     <span class="line"></span>
                 </td>
             </tr>
@@ -484,13 +482,13 @@
             </tr>
         </table>
 
-        <div class="subhead">4.a KK Assembly Participation</div>
+        <div class="subhead">4.a Katipunan Kabataan Assembly Participation</div>
         <table class="form-table">
             <tr>
                 <td width="50%">
                     <span class="label">Participation</span>
                     <table class="check-grid">
-                        <tr><td><span class="check">&#9633;</span> Attended KK Assembly</td></tr>
+                        <tr><td><span class="check">&#9633;</span> Attended Katipunan Kabataan Assembly</td></tr>
                         <tr><td><span class="check">&#9633;</span> Did not attend</td></tr>
                     </table>
                     <span class="label" style="margin-top:10px;">If yes, how many times</span>
@@ -509,7 +507,7 @@
             </tr>
         </table>
 
-        <div class="subhead">4.b Organization Joined</div>
+        <div class="subhead">4.b Organizations Joined</div>
         <table class="form-table">
             <tr>
                 <td>
@@ -628,9 +626,15 @@
                     </table>
                     <span class="label" style="margin-top:10px;">Education Level</span>
                     <table class="check-grid">
-                        {% for option in ip_education_level_options %}
-                        <tr><td><span class="check">&#9633;</span> {{ option }}</td></tr>
-                        {% endfor %}
+                        <tr>
+                            {% for option in ip_education_level_options %}
+                            <td><span class="check">&#9633;</span> {{ option }}</td>
+                            {% if forloop.counter|divisibleby:2 and not forloop.last %}
+                        </tr>
+                        <tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
                     </table>
                 </td>
                 <td width="50%">
@@ -660,7 +664,7 @@
                 </td>
                 <td>
                     <div class="signature-line"></div>
-                    <div class="signature-label">Signature of Encoder / LGU Youth and Sports Officer</div>
+                    <div class="signature-label">Signature of Encoder / LGU Youth &amp; Sports Officer</div>
                 </td>
             </tr>
         </table>
