@@ -806,6 +806,14 @@ h1,h2,h3,h4,h5,h6 {
     outline: none;
 }
 
+.barangay-search-input.form-control:disabled,
+.youth-search-input.form-control:disabled {
+    background: #f1f5fb;
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: .82;
+}
+
 .content-card-body {
     padding: 0;
     overflow: hidden;
