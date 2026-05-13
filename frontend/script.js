@@ -524,6 +524,9 @@ function isAllowedBarangayMove(currentBarangayName, newBarangayName) {
 
 function getSpecialCountEntries(data) {
 	return [
+		['ISY Male', data.isy_male ?? 0],
+		['ISY Female', data.isy_female ?? 0],
+		['ISY (Total)', data.isy ?? ((data.isy_male ?? 0) + (data.isy_female ?? 0))],
 		['PWD Male', data.pwd_male ?? 0],
 		['PWD Female', data.pwd_female ?? 0],
 		['PWD (Total)', data.pwd ?? 0],
@@ -561,6 +564,9 @@ function buildBarangaySummaryFromLoadedYouths(bid) {
 		ages: {},
 		civil_status: {},
 		education: {},
+		isy: 0,
+		isy_male: 0,
+		isy_female: 0,
 		pwd: 0,
 		pwd_male: 0,
 		pwd_female: 0,
@@ -597,6 +603,11 @@ function buildBarangaySummaryFromLoadedYouths(bid) {
 		summary.civil_status[civilStatus] = (summary.civil_status[civilStatus] || 0) + 1;
 		summary.education[educationLevel] = (summary.education[educationLevel] || 0) + 1;
 
+		if (toBool(details.is_in_school) || toBool(youth.is_in_school)) {
+			summary.isy += 1;
+			if (sexKey === 'male') summary.isy_male += 1;
+			if (sexKey === 'female') summary.isy_female += 1;
+		}
 		if (toBool(details.is_pwd)) {
 			summary.pwd += 1;
 			if (sexKey === 'male') summary.pwd_male += 1;
@@ -689,6 +700,88 @@ function buildSummaryRows(data) {
 	}
 
 	return { ageCols, rows };
+}
+
+function addCount(target, key, value) {
+	const normalizedKey = String(key || 'Unknown');
+	target[normalizedKey] = (target[normalizedKey] || 0) + Number(value || 0);
+}
+
+function mergeNestedCounts(target, source) {
+	if (!source || typeof source !== 'object') return;
+	Object.entries(source).forEach(([group, ageCounts]) => {
+		if (!target[group]) target[group] = {};
+		Object.entries(ageCounts || {}).forEach(([age, value]) => {
+			addCount(target[group], age, value);
+		});
+	});
+}
+
+function buildOverallBarangaySummary(summaries) {
+	const overall = {
+		barangay_id: 'manolo-fortich',
+		barangay_name: 'Manolo Fortich',
+		total: 0,
+		sex: {},
+		sex_by_age: {},
+		ages: {},
+		civil_status: {},
+		civil_by_age: {},
+		education: {},
+		education_by_age: {},
+		isy: 0,
+		isy_male: 0,
+		isy_female: 0,
+		pwd: 0,
+		pwd_male: 0,
+		pwd_female: 0,
+		fourps: 0,
+		fourps_male: 0,
+		fourps_female: 0,
+		working: 0,
+		working_male: 0,
+		working_female: 0,
+		unemployed: 0,
+		unemployed_male: 0,
+		unemployed_female: 0,
+		ip: 0,
+		ip_male: 0,
+		ip_female: 0,
+		muslim: 0,
+		muslim_male: 0,
+		muslim_female: 0,
+		osy: 0,
+		osy_male: 0,
+		osy_female: 0
+	};
+
+	const numericFields = [
+		'total',
+		'isy', 'isy_male', 'isy_female',
+		'pwd', 'pwd_male', 'pwd_female',
+		'fourps', 'fourps_male', 'fourps_female',
+		'working', 'working_male', 'working_female',
+		'unemployed', 'unemployed_male', 'unemployed_female',
+		'ip', 'ip_male', 'ip_female',
+		'muslim', 'muslim_male', 'muslim_female',
+		'osy', 'osy_male', 'osy_female'
+	];
+
+	(summaries || []).forEach(summary => {
+		numericFields.forEach(field => {
+			overall[field] += Number(summary?.[field] || 0);
+		});
+
+		Object.entries(summary?.sex || {}).forEach(([key, value]) => addCount(overall.sex, key, value));
+		Object.entries(summary?.ages || {}).forEach(([key, value]) => addCount(overall.ages, key, value));
+		Object.entries(summary?.civil_status || {}).forEach(([key, value]) => addCount(overall.civil_status, key, value));
+		Object.entries(summary?.education || {}).forEach(([key, value]) => addCount(overall.education, key, value));
+		mergeNestedCounts(overall.sex_by_age, summary?.sex_by_age);
+		mergeNestedCounts(overall.civil_by_age, summary?.civil_by_age);
+		mergeNestedCounts(overall.education_by_age, summary?.education_by_age);
+	});
+
+	return overall;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1177,6 +1270,115 @@ function drawBarangaySummaryPdfPage(doc, data, options = {}) {
 	}
 }
 
+function drawManoloFortichReportCoverPage(doc, summaries, overall) {
+	const pageWidth = doc.internal.pageSize.getWidth();
+	const pageHeight = doc.internal.pageSize.getHeight();
+	let y = 34;
+
+	doc.setFont('helvetica', 'bold');
+	doc.setFontSize(7);
+	doc.text('Republic of the Philippines', pageWidth / 2, y, { align: 'center' }); y += 9;
+	doc.text('Province of Bukidnon', pageWidth / 2, y, { align: 'center' }); y += 9;
+	doc.text('Municipality of Manolo Fortich', pageWidth / 2, y, { align: 'center' }); y += 18;
+	doc.setFontSize(15);
+	doc.text('MANOLO FORTICH OVERALL YOUTH REPORT', pageWidth / 2, y, { align: 'center' }); y += 13;
+	doc.setFontSize(8);
+	doc.text('Compiled report from all 22 barangays under the LGU Youth & Sports System', pageWidth / 2, y, { align: 'center' }); y += 22;
+
+	const barangayCount = summaries.length;
+	const totalYouth = Number(overall.total || 0);
+	const totalMale = Number(overall.sex?.Male || overall.sex?.male || 0);
+	const totalFemale = Number(overall.sex?.Female || overall.sex?.female || 0);
+	const cards = [
+		['Barangays Covered', barangayCount],
+		['Total Youth', totalYouth],
+		['Male', totalMale],
+		['Female', totalFemale],
+		['ISY', overall.isy || 0],
+		['OSY', overall.osy || 0],
+		['IP', overall.ip || 0],
+		['PWD', overall.pwd || 0],
+		['MU', overall.muslim || 0]
+	];
+	const cardWidth = (pageWidth - 72) / 3;
+	cards.forEach((card, index) => {
+		const col = index % 3;
+		const row = Math.floor(index / 3);
+		const x = 24 + col * cardWidth;
+		const cardY = y + row * 48;
+		doc.setFillColor(238, 244, 255);
+		doc.setDrawColor(198, 208, 232);
+		doc.roundedRect(x, cardY, cardWidth - 10, 36, 5, 5, 'FD');
+		doc.setFont('helvetica', 'normal');
+		doc.setFontSize(7);
+		doc.setTextColor(95, 113, 153);
+		doc.text(card[0], x + 10, cardY + 13);
+		doc.setFont('helvetica', 'bold');
+		doc.setFontSize(13);
+		doc.setTextColor(15, 37, 88);
+		doc.text(String(card[1]), x + 10, cardY + 28);
+	});
+	y += Math.ceil(cards.length / 3) * 48 + 8;
+
+	doc.setTextColor(38);
+	doc.setFont('helvetica', 'bold');
+	doc.setFontSize(9);
+	doc.text('Barangay Report Index', 24, y);
+
+	const body = summaries.map((summary, index) => [
+		String(index + 1).padStart(2, '0'),
+		summary.barangay_name || 'Barangay',
+		summary.total || 0,
+		summary.isy || 0,
+		summary.osy || 0,
+		summary.ip || 0,
+		summary.pwd || 0,
+		summary.muslim || 0,
+		summary.working || 0,
+		summary.unemployed || 0
+	]);
+
+	doc.autoTable({
+		startY: y + 8,
+		head: [['#', 'Barangay', 'Total Youth', 'ISY', 'OSY', 'IP', 'PWD', 'MU', 'Working', 'Unemployed']],
+		body,
+		theme: 'grid',
+		margin: { left: 24, right: 24 },
+		headStyles: {
+			fillColor: cssVarRgb('--pdf-header', [15, 37, 88]),
+			textColor: 255,
+			fontStyle: 'bold',
+			halign: 'center'
+		},
+		styles: {
+			font: 'helvetica',
+			fontSize: 6.5,
+			cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+			lineColor: cssVarRgb('--pdf-border', [198, 208, 232]),
+			lineWidth: 0.25
+		},
+		alternateRowStyles: { fillColor: cssVarRgb('--pdf-row', [238, 242, 255]) },
+		columnStyles: {
+			0: { cellWidth: 34, halign: 'center' },
+			1: { cellWidth: 156 },
+			2: { halign: 'center' },
+			3: { halign: 'center' },
+			4: { halign: 'center' },
+			5: { halign: 'center' },
+			6: { halign: 'center' },
+			7: { halign: 'center' },
+			8: { halign: 'center' },
+			9: { halign: 'center' }
+		}
+	});
+
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(6.5);
+	doc.setTextColor(95, 113, 153);
+	doc.text('Overall report page plus individual barangay report pages are included in this PDF.', pageWidth / 2, pageHeight - 14, { align: 'center' });
+	doc.setTextColor(38);
+}
+
 function downloadBarangaySummaryPDF() {
 	if (!currentBarangayId) return alert('Open a barangay first');
 	fetchBarangaySummary(currentBarangayId).then(data => {
@@ -1223,16 +1425,25 @@ async function downloadAllBarangaySummaryPDF() {
 			const summary = await fetchBarangaySummary(barangay.id);
 			return { ...summary, barangay_name: summary.barangay_name || barangay.name };
 		}));
+		const overallSummary = buildOverallBarangaySummary(summaries);
 
 		const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
 		if (typeof doc.autoTable !== 'function') return alert('jsPDF AutoTable plugin not loaded');
 
+		drawManoloFortichReportCoverPage(doc, summaries, overallSummary);
+		doc.addPage('letter', 'landscape');
+		drawBarangaySummaryPdfPage(doc, overallSummary, {
+			reportTitle: 'Manolo Fortich Overall Report',
+			footerText: `Compiled from ${summaries.length} barangay reports`,
+			pageLabel: 'Municipal Summary'
+		});
+
 		summaries.forEach((summary, index) => {
-			if (index > 0) doc.addPage('letter', 'landscape');
+			doc.addPage('letter', 'landscape');
 			drawBarangaySummaryPdfPage(doc, summary, {
-				reportTitle: 'Manolo Fortich',
-				footerText: `Barangay ${summary.barangay_name}`,
-				pageLabel: `Report ${index + 1} of ${summaries.length}`
+				reportTitle: `${summary.barangay_name} Barangay Report`,
+				footerText: 'Included in the Manolo Fortich overall report',
+				pageLabel: `Barangay Report ${index + 1} of ${summaries.length}`
 			});
 		});
 

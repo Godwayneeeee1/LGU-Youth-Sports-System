@@ -2539,6 +2539,9 @@ def barangay_summary(request, bid):
         'civil_by_age':      civil_by_age,
         'education':         edu_counts,
         'education_by_age':  edu_by_age,
+        'isy':               youths.filter(is_in_school=True).count(),
+        'isy_male':          youths.filter(is_in_school=True, sex='Male').count(),
+        'isy_female':        youths.filter(is_in_school=True, sex='Female').count(),
         'pwd':               youths.filter(is_pwd=True).count(),
         'pwd_male':          youths.filter(is_pwd=True, sex='Male').count(),
         'pwd_female':        youths.filter(is_pwd=True, sex='Female').count(),
@@ -2728,8 +2731,8 @@ def heatmap_api(request):
 
     return JsonResponse({
         'ages': age_columns,
-        'default_metric': 'unemployed',
-        'metric_order': ['unemployed', 'osy', 'pwd', 'working', 'ip', 'in_school'],
+        'default_metric': 'in_school',
+        'metric_order': ['in_school', 'osy', 'working', 'unemployed', 'pwd', 'ip'],
         'metrics': metrics,
     })
 

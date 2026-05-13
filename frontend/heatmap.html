@@ -416,12 +416,12 @@
                 </div>
                 <div class="heatmap-control-row">
                     <div class="heatmap-metric-controls" role="tablist" aria-label="Heatmap category selector">
-                        <button type="button" class="heatmap-metric-button active" data-metric="unemployed" aria-pressed="true">Unemployed Youth</button>
+                        <button type="button" class="heatmap-metric-button active" data-metric="in_school" aria-pressed="true">In School Youth</button>
                         <button type="button" class="heatmap-metric-button" data-metric="osy" aria-pressed="false">Out of School Youth</button>
-                        <button type="button" class="heatmap-metric-button" data-metric="pwd" aria-pressed="false">PWD Youth</button>
                         <button type="button" class="heatmap-metric-button" data-metric="working" aria-pressed="false">Working Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="unemployed" aria-pressed="false">Unemployed Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="pwd" aria-pressed="false">PWD Youth</button>
                         <button type="button" class="heatmap-metric-button" data-metric="ip" aria-pressed="false">IP Youth</button>
-                        <button type="button" class="heatmap-metric-button" data-metric="in_school" aria-pressed="false">In School Youth</button>
                     </div>
                     <button type="button" id="heatmap-download-btn" class="heatmap-download-button" disabled>
                         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -429,7 +429,7 @@
                     </button>
                 </div>
                 <div class="heatmap-chip-row">
-                    <span id="heatmap-metric-chip" class="heatmap-chip">Metric: Unemployed Youth</span>
+                    <span id="heatmap-metric-chip" class="heatmap-chip">Metric: In School Youth</span>
                     <span id="heatmap-rows-chip" class="heatmap-chip">Rows: 22 Barangays</span>
                     <span id="heatmap-age-chip" class="heatmap-chip">Columns: Ages 15 to 30</span>
                 </div>
@@ -486,40 +486,40 @@
 
 <script>
     const HEATMAP_METRICS = {
-        unemployed: {
-            label: 'Unemployed Youth',
-            noun: 'unemployed youth'
+        in_school: {
+            label: 'In School Youth',
+            noun: 'in school youth'
         },
         osy: {
             label: 'Out of School Youth',
             noun: 'out of school youth'
         },
-        pwd: {
-            label: 'PWD Youth',
-            noun: 'PWD youth'
-        },
         working: {
             label: 'Working Youth',
             noun: 'working youth'
         },
+        unemployed: {
+            label: 'Unemployed Youth',
+            noun: 'unemployed youth'
+        },
+        pwd: {
+            label: 'PWD Youth',
+            noun: 'PWD youth'
+        },
         ip: {
             label: 'IP Youth',
             noun: 'IP youth'
-        },
-        in_school: {
-            label: 'In School Youth',
-            noun: 'in school youth'
         }
     };
 
     const heatmapState = {
         payload: null,
-        activeMetric: 'unemployed',
+        activeMetric: 'in_school',
         currentUser: null
     };
 
     function getMetricMeta(metricKey) {
-        return HEATMAP_METRICS[metricKey] || HEATMAP_METRICS.unemployed;
+        return HEATMAP_METRICS[metricKey] || HEATMAP_METRICS.in_school;
     }
 
     function escapeHtml(value) {
@@ -902,7 +902,7 @@
             if (!response.ok) throw new Error('Failed to load heatmap data');
             const data = await response.json();
             heatmapState.payload = data;
-            heatmapState.activeMetric = data.default_metric || data.metric_order?.[0] || 'unemployed';
+            heatmapState.activeMetric = data.default_metric || data.metric_order?.[0] || 'in_school';
             const downloadButton = document.getElementById('heatmap-download-btn');
             if (downloadButton) downloadButton.disabled = false;
             renderActiveMetric();
