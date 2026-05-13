@@ -465,7 +465,7 @@ FORM_IP_EDUCATION_LEVEL_OPTIONS = [
 FORM_YOUTH_CLASSIFICATION_OPTIONS = [
     'In School Youth (ISY)',
     'Out of School Youth (OSY)',
-    'Disabled Youth (PWD)',
+    'PWD',
     'IP Youth (IP)',
     'Working Youth (WK)',
     'Unemployed Youth (UY)',
@@ -553,6 +553,31 @@ def _youth_column_available(field_name):
     return column_name in _available_youth_column_names()
 
 
+def _youth_field_value(youth, field_name, default=None):
+    """Read a Youth field only when the live database has that column."""
+    if not _youth_column_available(field_name):
+        return default
+    return getattr(youth, field_name, default)
+
+
+def _filter_available_youth_fields(fields):
+    """Drop model fields whose columns are not present in a partially migrated DB."""
+    return {
+        field_name: value
+        for field_name, value in fields.items()
+        if _youth_column_available(field_name)
+    }
+
+
+def _all_youth_model_columns_available():
+    """Return whether the database table matches every concrete Youth model column."""
+    available_columns = _available_youth_column_names()
+    return all(
+        model_field.primary_key or model_field.column in available_columns
+        for model_field in Youth._meta.local_concrete_fields
+    )
+
+
 def _organizations_joined_column_available():
     """Return whether the live database already has the organizations_joined column."""
     return _youth_column_available('organizations_joined')
@@ -575,12 +600,13 @@ def _youth_queryset():
 def _organizations_joined_values_for_youth(youth):
     if not _organizations_joined_column_available():
         return []
-    return _parse_preference_list(youth.organizations_joined, ORGANIZATION_JOINED_OPTIONS)
+    return _parse_preference_list(_youth_field_value(youth, 'organizations_joined', '[]'), ORGANIZATION_JOINED_OPTIONS)
 
 
 def _create_youth_record(fields):
     """Create a youth record even when the database is temporarily behind the model schema."""
-    if all(_youth_column_available(field_name) for field_name in fields):
+    fields = _filter_available_youth_fields(fields)
+    if _all_youth_model_columns_available():
         return Youth.objects.create(**fields)
 
     youth = Youth(**fields)
@@ -693,8 +719,8 @@ def _build_top_sport_overall_summary(youths):
     }
 
     for youth in youths:
-        sports = _parse_preference_list(youth.sports_preferences, SPORT_PREFERENCE_OPTIONS)
-        sports_other = (youth.sports_preference_other or '').strip()
+        sports = _parse_preference_list(_youth_field_value(youth, 'sports_preferences', '[]'), SPORT_PREFERENCE_OPTIONS)
+        sports_other = (_youth_field_value(youth, 'sports_preference_other', '') or '').strip()
         sex = (youth.sex or '').strip().lower()
         sex_key = 'male' if sex == 'male' else 'female' if sex == 'female' else None
 
@@ -741,10 +767,10 @@ def _build_talent_sports_metric(youths, option_labels, category_key):
         sex = (youth.sex or '').strip().lower()
         sex_key = 'male' if sex == 'male' else 'female' if sex == 'female' else None
 
-        sports = _parse_preference_list(youth.sports_preferences, SPORT_PREFERENCE_OPTIONS)
-        talents = _parse_preference_list(youth.talent_preferences, TALENT_PREFERENCE_OPTIONS)
-        sports_other = (youth.sports_preference_other or '').strip()
-        talents_other = (youth.talent_preference_other or '').strip()
+        sports = _parse_preference_list(_youth_field_value(youth, 'sports_preferences', '[]'), SPORT_PREFERENCE_OPTIONS)
+        talents = _parse_preference_list(_youth_field_value(youth, 'talent_preferences', '[]'), TALENT_PREFERENCE_OPTIONS)
+        sports_other = (_youth_field_value(youth, 'sports_preference_other', '') or '').strip()
+        talents_other = (_youth_field_value(youth, 'talent_preference_other', '') or '').strip()
 
         if category_key in ('all', 'sports'):
             for option in sports:
@@ -828,14 +854,15 @@ def _get_sports_competition_level_rows_for_user(user):
 
     rows = []
     for youth in youths.order_by('barangay__name', 'name'):
-        levels = _parse_preference_list(youth.sports_competition_levels, SPORT_COMPETITION_LEVEL_OPTIONS)
+        levels = _parse_preference_list(_youth_field_value(youth, 'sports_competition_levels', '[]'), SPORT_COMPETITION_LEVEL_OPTIONS)
         if not levels:
             continue
 
-        sports = _parse_preference_list(youth.sports_preferences, SPORT_PREFERENCE_OPTIONS)
+        sports = _parse_preference_list(_youth_field_value(youth, 'sports_preferences', '[]'), SPORT_PREFERENCE_OPTIONS)
         sports_labels = list(sports)
-        if (youth.sports_preference_other or '').strip():
-            sports_labels.append(f"Other: {youth.sports_preference_other.strip()}")
+        sports_other = (_youth_field_value(youth, 'sports_preference_other', '') or '').strip()
+        if sports_other:
+            sports_labels.append(f"Other: {sports_other}")
 
         rows.append({
             'name': youth.name,
@@ -2497,6 +2524,9 @@ def barangay_summary(request, bid):
         r['education_level'] or 'Unknown': r['count']
         for r in youths.values('education_level').annotate(count=Count('id'))
     }
+    unemployed_count = youths.filter(is_unemployed=True).count() if _youth_column_available('is_unemployed') else 0
+    unemployed_male_count = youths.filter(is_unemployed=True, sex='Male').count() if _youth_column_available('is_unemployed') else 0
+    unemployed_female_count = youths.filter(is_unemployed=True, sex='Female').count() if _youth_column_available('is_unemployed') else 0
 
     return JsonResponse({
         'barangay_id':       barangay.id,
@@ -2518,9 +2548,9 @@ def barangay_summary(request, bid):
         'working':           youths.filter(is_working_youth=True).count(),
         'working_male':      youths.filter(is_working_youth=True, sex='Male').count(),
         'working_female':    youths.filter(is_working_youth=True, sex='Female').count(),
-        'unemployed':        youths.filter(is_unemployed=True).count(),
-        'unemployed_male':   youths.filter(is_unemployed=True, sex='Male').count(),
-        'unemployed_female': youths.filter(is_unemployed=True, sex='Female').count(),
+        'unemployed':        unemployed_count,
+        'unemployed_male':   unemployed_male_count,
+        'unemployed_female': unemployed_female_count,
         'ip':                youths.filter(is_ip=True).count(),
         'ip_male':           youths.filter(is_ip=True, sex='Male').count(),
         'ip_female':         youths.filter(is_ip=True, sex='Female').count(),
@@ -2556,13 +2586,17 @@ def demographics_api(request):
     }
 
     allowed_ids = [barangay.id for barangay in barangays]
+    value_fields = [
+        'barangay__name', 'sex', 'is_in_school', 'is_osy',
+        'is_working_youth', 'is_pwd', 'is_4ps', 'is_ip', 'is_muslim',
+    ]
+    if _youth_column_available('is_unemployed'):
+        value_fields.append('is_unemployed')
+
     for y in (Youth.objects
               .select_related('barangay')
               .filter(barangay_id__in=allowed_ids)
-              .values(
-                  'barangay__name', 'sex', 'is_in_school', 'is_osy',
-                  'is_working_youth', 'is_unemployed', 'is_pwd', 'is_4ps', 'is_ip', 'is_muslim'
-              )):
+              .values(*value_fields)):
         name = y['barangay__name']
         if name not in demo_data:
             continue
@@ -2583,7 +2617,7 @@ def demographics_api(request):
             matches.append('osy')
         if y['is_working_youth']:
             matches.append('wk')
-        if y['is_unemployed']:
+        if y.get('is_unemployed'):
             matches.append('uy')
         if y['is_pwd']:
             matches.append('iy')
@@ -2671,7 +2705,11 @@ def heatmap_api(request):
     allowed_ids = [barangay.id for barangay in barangays]
 
     metric_queries = {
-        'unemployed': Youth.objects.filter(is_unemployed=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
+        'unemployed': (
+            Youth.objects.filter(is_unemployed=True, birthdate__isnull=False, barangay_id__in=allowed_ids)
+            if _youth_column_available('is_unemployed')
+            else Youth.objects.none()
+        ),
         'osy': Youth.objects.filter(is_osy=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
         'pwd': Youth.objects.filter(is_pwd=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
     }
@@ -2787,6 +2825,7 @@ def youth_api(request):
             youths = youths.filter(barangay=assigned)
         data = []
         for y in youths:
+            youth_is_unemployed = _youth_field_value(y, 'is_unemployed', False)
             data.append({
                 'id':              y.id,
                 'name':            y.name,
@@ -2812,8 +2851,8 @@ def youth_api(request):
                     'osy_program_type':         y.osy_program_type,
                     'osy_reason_no_enroll':     y.osy_reason_no_enroll,
                     'is_working_youth':         y.is_working_youth,
-                    'is_unemployed':           y.is_unemployed,
-                    'is_unemployed_youth':     y.is_unemployed,
+                    'is_unemployed':           youth_is_unemployed,
+                    'is_unemployed_youth':     youth_is_unemployed,
                     'is_pwd':                   y.is_pwd,
                     'disability_type':          y.disability_type,
                     'has_specific_needs':       y.has_specific_needs,
@@ -2826,18 +2865,18 @@ def youth_api(request):
                     'school_name':              y.school_name,
                     'is_scholar':               y.is_scholar,
                     'scholarship_program':      y.scholarship_program,
-                    'employment_company_name':  y.employment_company_name if _youth_column_available('employment_company_name') else '',
-                    'employment_company_address': y.employment_company_address if _youth_column_available('employment_company_address') else '',
+                    'employment_company_name':  _youth_field_value(y, 'employment_company_name', ''),
+                    'employment_company_address': _youth_field_value(y, 'employment_company_address', ''),
                     'work_status':              y.work_status,
-                    'sports_preferences':       _parse_preference_list(y.sports_preferences, SPORT_PREFERENCE_OPTIONS),
-                    'talent_preferences':       _parse_preference_list(y.talent_preferences, TALENT_PREFERENCE_OPTIONS),
-                    'sports_competition_levels': _parse_preference_list(y.sports_competition_levels, SPORT_COMPETITION_LEVEL_OPTIONS),
+                    'sports_preferences':       _parse_preference_list(_youth_field_value(y, 'sports_preferences', '[]'), SPORT_PREFERENCE_OPTIONS),
+                    'talent_preferences':       _parse_preference_list(_youth_field_value(y, 'talent_preferences', '[]'), TALENT_PREFERENCE_OPTIONS),
+                    'sports_competition_levels': _parse_preference_list(_youth_field_value(y, 'sports_competition_levels', '[]'), SPORT_COMPETITION_LEVEL_OPTIONS),
                     'organizations_joined':     _organizations_joined_values_for_youth(y),
-                    'sports_preference_other':  y.sports_preference_other,
-                    'talent_preference_other':  y.talent_preference_other,
+                    'sports_preference_other':  _youth_field_value(y, 'sports_preference_other', ''),
+                    'talent_preference_other':  _youth_field_value(y, 'talent_preference_other', ''),
                     'registered_voter_sk':      y.registered_voter_sk,
                     'registered_voter_national':y.registered_voter_national,
-                    'is_non_voter':             y.is_non_voter,
+                    'is_non_voter':             _youth_field_value(y, 'is_non_voter', False),
                     'voted_last_sk':            y.voted_last_sk,
                     'attended_kk_assembly':     y.attended_kk_assembly,
                     'kk_assembly_times':        y.kk_assembly_times,
@@ -2986,6 +3025,7 @@ def youth_api(request):
                 fields['employment_company_address'] = str(data.get('employment_company_address') or '').strip()
             if _organizations_joined_column_available():
                 fields['organizations_joined'] = organizations_joined
+            fields = _filter_available_youth_fields(fields)
 
             if request.method == 'POST':
                 duplicate_youth = _find_duplicate_youth_record(name, parsed_birthdate, sex_value)

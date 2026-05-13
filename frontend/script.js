@@ -194,6 +194,13 @@ const val = id => ($id(id) && $id(id).value) || '';
 const chk = id => !!($id(id) && $id(id).checked);
 const setVal = (id, v) => { const e = $id(id); if (e) e.value = v || ''; };
 const setChk = (id, v) => { const e = $id(id); if (e) e.checked = !!v; };
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
+	'&': '&amp;',
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;',
+	"'": '&#39;'
+}[ch]));
 
 function togglePasswordField(inputId, iconId) {
 	const input = $id(inputId);
@@ -920,8 +927,10 @@ function renderDashboard() {
 		const color      = PALETTE[idx % PALETTE.length];
 		const countLabel = cnt === 1 ? '1 youth' : cnt + ' youth';
 		const num        = String(idx + 1).padStart(2, '0');
+		const nameLabel  = escapeHtml(b.name);
+		const nameArg    = escapeHtml(JSON.stringify(String(b.name || '')));
 		return `
-		<div class="barangay-card" onclick="openBarangay(${b.id}, '${b.name}')">
+		<div class="barangay-card" onclick="openBarangay(${Number(b.id)}, ${nameArg})">
 			<div class="bc-banner" style="background:${color};">
 				<div class="bc-orb bc-orb-a"></div>
 				<div class="bc-orb bc-orb-b"></div>
@@ -929,7 +938,7 @@ function renderDashboard() {
 				<span class="bc-num">${num}</span>
 			</div>
 			<div class="bc-body">
-				<div class="bc-name">${b.name}</div>
+				<div class="bc-name">${nameLabel}</div>
 				<div class="bc-loc">
 					<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
 					Manolo Fortich, Bukidnon
@@ -1656,15 +1665,17 @@ function renderAdminAccountActivity(payload) {
 	tbody.innerHTML = rows.map(row => {
 		const statusClass = row.is_logged_in ? 'green' : (row.is_account_active ? 'navy' : 'rose');
 		const statusLabel = row.is_logged_in ? 'Active Now' : (row.is_account_active ? 'Offline' : 'Disabled');
-		const safeUsername = String(row.username).replace(/'/g, "\\'");
+		const usernameArg = escapeHtml(JSON.stringify(String(row.username || '')));
+		const usernameLabel = escapeHtml(row.username);
+		const barangayLabel = escapeHtml(row.barangay_name || 'Unassigned');
 		const editButton = `<button class="btn-tbl view" onclick="openAdminAccountModal(${row.user_id})">Edit</button>`;
 		const actionButton = row.is_account_active
-			? `<button class="btn-tbl delete" onclick="disableBarangayAccount(${row.user_id}, '${safeUsername}')">Disable</button>`
-			: `<button class="btn-tbl view" onclick="enableBarangayAccount(${row.user_id}, '${safeUsername}')">Enable</button>`;
+			? `<button class="btn-tbl delete" onclick="disableBarangayAccount(${row.user_id}, ${usernameArg})">Disable</button>`
+			: `<button class="btn-tbl view" onclick="enableBarangayAccount(${row.user_id}, ${usernameArg})">Enable</button>`;
 		return `
 			<tr>
-				<td>${row.username}</td>
-				<td>${row.barangay_name || 'Unassigned'}</td>
+				<td>${usernameLabel}</td>
+				<td>${barangayLabel}</td>
 				<td><span class="badge-pill ${statusClass}">${statusLabel}</span></td>
 				<td>${formatDateTime(row.login_time)}</td>
 				<td>${formatDateTime(row.logout_time)}</td>
@@ -2071,11 +2082,11 @@ function renderRows(data) {
     
 	tbody.innerHTML = data.map(y => `
 		<tr>
-			<td>${y.name}</td>
-			<td>${y.age}</td>
-			<td>${y.sex}</td>
-			<td>${y.full_data.purok || '-'}</td>
-			<td>${y.education_level}</td>
+			<td>${escapeHtml(y.name)}</td>
+			<td>${escapeHtml(y.age)}</td>
+			<td>${escapeHtml(y.sex)}</td>
+			<td>${escapeHtml(y.full_data.purok || '-')}</td>
+			<td>${escapeHtml(y.education_level)}</td>
 			<td class="admin-only">
 			<div style="display:flex;gap:6px;">
 				<button class="btn-tbl view" onclick="viewFullSummary(${y.id})">
