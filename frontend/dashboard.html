@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | LGU Youth & Sports</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260512-modal-footer-fix">
+    <link rel="stylesheet" href="{% static 'style.css' %}?v=20260513-barangay-summary-pdf">
     <style>
         .navbar .badge-text, .navbar img[alt="youth"] { display: none !important; }
     </style>
@@ -145,6 +145,15 @@
                 <label>Select Barangay</label>
                 <div style="font-size:.78rem;color:var(--text-muted);">Manage youth records by barangay jurisdiction</div>
             </div>
+            <button type="button" class="btn-report-download system-admin-only" onclick="downloadAllBarangaySummaryPDF()" style="display:none;">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <path d="M12 18v-6"/>
+                    <path d="m9 15 3 3 3-3"/>
+                </svg>
+                Download Manolo Fortich PDF
+            </button>
             <div class="barangay-search-wrap">
                 <svg class="barangay-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="11" cy="11" r="7"/>
@@ -847,7 +856,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="{% static 'script.js' %}?v=20260512-employment-background"></script>
+<script src="{% static 'script.js' %}?v=20260513-barangay-summary-pdf"></script>
 
 <script>
 function switchTab(tabId, btn) {

@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'style.css' %}?v=20260420-sports-dashboard-nav">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
         .page-body {
             max-width: min(96vw, 1680px);
@@ -43,6 +45,13 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+        .heatmap-control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
         .heatmap-metric-button {
             display: inline-flex;
             align-items: center;
@@ -67,6 +76,32 @@
             border-color: rgba(31, 79, 163, 0.38);
             color: #153b7d;
             box-shadow: inset 0 0 0 1px rgba(31, 79, 163, 0.08);
+        }
+        .heatmap-download-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid rgba(5, 150, 105, 0.22);
+            border-radius: 12px;
+            background: rgba(5, 150, 105, 0.1);
+            color: #047857;
+            font-size: 0.8rem;
+            font-weight: 800;
+            transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
+            cursor: pointer;
+        }
+        .heatmap-download-button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(5, 150, 105, 0.38);
+            box-shadow: 0 10px 24px rgba(15, 37, 88, 0.08);
+        }
+        .heatmap-download-button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         .heatmap-chip {
             display: inline-flex;
@@ -351,7 +386,7 @@
     <div class="page-header">
         <div>
             <h1 id="heatmap-page-title" class="page-header-title">Youth Heatmap Grid</h1>
-            <p id="heatmap-page-sub" class="page-header-sub">Barangay by age hotspot view for unemployed youth, out of school youth, and PWD ages 15 to 30</p>
+            <p id="heatmap-page-sub" class="page-header-sub">Barangay by age hotspot view for key youth categories ages 15 to 30</p>
         </div>
     </div>
 
@@ -379,10 +414,19 @@
                         </div>
                     </div>
                 </div>
-                <div class="heatmap-metric-controls" role="tablist" aria-label="Heatmap category selector">
-                    <button type="button" class="heatmap-metric-button active" data-metric="unemployed" aria-pressed="true">Unemployed Youth</button>
-                    <button type="button" class="heatmap-metric-button" data-metric="osy" aria-pressed="false">Out of School Youth</button>
-                    <button type="button" class="heatmap-metric-button" data-metric="pwd" aria-pressed="false">PWD Youth</button>
+                <div class="heatmap-control-row">
+                    <div class="heatmap-metric-controls" role="tablist" aria-label="Heatmap category selector">
+                        <button type="button" class="heatmap-metric-button active" data-metric="unemployed" aria-pressed="true">Unemployed Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="osy" aria-pressed="false">Out of School Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="pwd" aria-pressed="false">PWD Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="working" aria-pressed="false">Working Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="ip" aria-pressed="false">IP Youth</button>
+                        <button type="button" class="heatmap-metric-button" data-metric="in_school" aria-pressed="false">In School Youth</button>
+                    </div>
+                    <button type="button" id="heatmap-download-btn" class="heatmap-download-button" disabled>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download PDF
+                    </button>
                 </div>
                 <div class="heatmap-chip-row">
                     <span id="heatmap-metric-chip" class="heatmap-chip">Metric: Unemployed Youth</span>
@@ -453,6 +497,18 @@
         pwd: {
             label: 'PWD Youth',
             noun: 'PWD youth'
+        },
+        working: {
+            label: 'Working Youth',
+            noun: 'working youth'
+        },
+        ip: {
+            label: 'IP Youth',
+            noun: 'IP youth'
+        },
+        in_school: {
+            label: 'In School Youth',
+            noun: 'in school youth'
         }
     };
 
@@ -464,6 +520,16 @@
 
     function getMetricMeta(metricKey) {
         return HEATMAP_METRICS[metricKey] || HEATMAP_METRICS.unemployed;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
     }
 
     function hexToRgb(hex) {
@@ -666,7 +732,7 @@
                 const value = Number(row.counts?.[age] || 0);
                 const style = cellStyle(value, maxCount);
                 const zeroClass = value === 0 ? ' zero' : '';
-                return `<td class="heatmap-cell${zeroClass}" title="${row.barangay} | Age ${age} | ${value} ${meta.noun}" style="background:${style.background};color:${style.color};">${value}</td>`;
+                return `<td class="heatmap-cell${zeroClass}" title="${escapeHtml(row.barangay)} | Age ${escapeHtml(age)} | ${value} ${escapeHtml(meta.noun)}" style="background:${style.background};color:${style.color};">${value}</td>`;
             }).join('');
 
             const subtitle = row.total > 0 && row.peak_age
@@ -676,8 +742,8 @@
             return `
                 <tr>
                     <th class="heatmap-rowhead" scope="row">
-                        <div class="heatmap-rowname">${row.barangay}</div>
-                        <div class="heatmap-rowsub">${subtitle}</div>
+                        <div class="heatmap-rowname">${escapeHtml(row.barangay)}</div>
+                        <div class="heatmap-rowsub">${escapeHtml(subtitle)}</div>
                     </th>
                     ${cells}
                     <td class="heatmap-sex-cell heatmap-male-cell">${row.male_total || 0}</td>
@@ -713,12 +779,123 @@
         renderActiveMetric();
     }
 
+    function safeFilePart(value) {
+        return String(value || 'heatmap')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'heatmap';
+    }
+
+    function downloadActiveHeatmapPdf() {
+        if (!heatmapState.payload) return;
+
+        const jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+        if (!jsPDF) {
+            alert('PDF library not loaded. Please refresh the page and try again.');
+            return;
+        }
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'legal' });
+        if (typeof doc.autoTable !== 'function') {
+            alert('PDF table library not loaded. Please refresh the page and try again.');
+            return;
+        }
+
+        const ages = Array.isArray(heatmapState.payload.ages) ? heatmapState.payload.ages : [];
+        const metricData = heatmapState.payload.metrics?.[heatmapState.activeMetric];
+        const rows = Array.isArray(metricData?.rows) ? metricData.rows : [];
+        const meta = getMetricMeta(heatmapState.activeMetric);
+        const userScope = heatmapState.currentUser?.is_admin
+            ? 'All Barangays'
+            : (heatmapState.currentUser?.barangay_name || 'Assigned Barangay');
+
+        const generatedOn = new Date().toLocaleString('en-PH');
+        const title = `${meta.label} Heatmap`;
+        const ageRange = ages.length ? `Ages ${ages[0]} to ${ages[ages.length - 1]}` : 'Ages 15 to 30';
+        const tableHead = [['Barangay', ...ages.map(age => `Age ${age}`), 'Male', 'Female', 'Total', 'Peak Age', 'Peak Count']];
+        const tableBody = rows.map(row => [
+            row.barangay,
+            ...ages.map(age => Number(row.counts?.[age] || 0)),
+            Number(row.male_total || 0),
+            Number(row.female_total || 0),
+            Number(row.total || 0),
+            row.peak_age || '',
+            Number(row.peak_count || 0)
+        ]);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(15, 37, 88);
+        doc.text(title, 36, 34);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(95, 113, 153);
+        doc.text(`Scope: ${userScope}`, 36, 52);
+        doc.text(`${ageRange} | Generated: ${generatedOn}`, 36, 66);
+
+        doc.autoTable({
+            head: tableHead,
+            body: tableBody,
+            startY: 82,
+            margin: { left: 28, right: 28 },
+            theme: 'grid',
+            styles: {
+                font: 'helvetica',
+                fontSize: 6.8,
+                cellPadding: 3,
+                overflow: 'linebreak',
+                halign: 'center',
+                valign: 'middle',
+                lineColor: [198, 208, 232],
+                lineWidth: 0.4,
+            },
+            headStyles: {
+                fillColor: [15, 37, 88],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 6.6,
+            },
+            columnStyles: {
+                0: {
+                    halign: 'left',
+                    cellWidth: 118,
+                    fontStyle: 'bold',
+                    textColor: [15, 37, 88],
+                },
+            },
+            alternateRowStyles: {
+                fillColor: [248, 251, 255],
+            },
+            didParseCell(data) {
+                if (data.section !== 'body' || data.column.index === 0) return;
+                const numericValue = Number(data.cell.raw || 0);
+                if (numericValue > 0) {
+                    data.cell.styles.fillColor = [220, 238, 255];
+                    data.cell.styles.textColor = [15, 37, 88];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+            didDrawPage() {
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                doc.setFontSize(7);
+                doc.setTextColor(142, 160, 191);
+                doc.text('LGU Youth & Sports - Manolo Fortich, Bukidnon', 36, pageHeight - 18);
+                doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - 72, pageHeight - 18);
+            },
+        });
+
+        doc.save(`${safeFilePart(meta.label)}-heatmap.pdf`);
+    }
+
     async function initHeatmap() {
         const shell = document.getElementById('heatmap-shell');
 
         document.querySelectorAll('.heatmap-metric-button').forEach(button => {
             button.addEventListener('click', () => setActiveMetric(button.dataset.metric));
         });
+        document.getElementById('heatmap-download-btn')?.addEventListener('click', downloadActiveHeatmapPdf);
 
         try {
             const response = await fetch('/api/heatmap/');
@@ -726,6 +903,8 @@
             const data = await response.json();
             heatmapState.payload = data;
             heatmapState.activeMetric = data.default_metric || data.metric_order?.[0] || 'unemployed';
+            const downloadButton = document.getElementById('heatmap-download-btn');
+            if (downloadButton) downloadButton.disabled = false;
             renderActiveMetric();
         } catch (error) {
             console.warn('Could not load heatmap data:', error);

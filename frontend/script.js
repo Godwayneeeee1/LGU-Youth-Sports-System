@@ -1074,77 +1074,119 @@ function downloadBarangaySummaryCSV() {
 	}).catch(err => alert(err.message));
 }
 
+function getSummaryPdfLibrary() {
+	const jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+	if (!jsPDF) {
+		alert('PDF library not loaded');
+		return null;
+	}
+	return jsPDF;
+}
+
+function drawBarangaySummaryPdfPage(doc, data, options = {}) {
+	const { ageCols, rows } = buildSummaryRows(data);
+	const head = ['DEMOGRAPHICS', ...ageCols, 'TOTAL'];
+	const body = rows.slice(1);
+	const pageWidth = doc.internal.pageSize.getWidth();
+	const pageHeight = doc.internal.pageSize.getHeight();
+	let startY = 22;
+
+	doc.setFont('helvetica', 'bold');
+	doc.setFontSize(5.8);
+	doc.text('Republic of the Philippines', pageWidth / 2, startY, { align: 'center' }); startY += 7;
+	doc.text('Province of Bukidnon', pageWidth / 2, startY, { align: 'center' }); startY += 7;
+	doc.text('Municipality of Manolo Fortich', pageWidth / 2, startY, { align: 'center' }); startY += 15;
+	doc.setFontSize(10.5);
+	doc.text((options.reportTitle || data.barangay_name || 'BARANGAY').toUpperCase(), pageWidth / 2, startY, { align: 'center' }); startY += 11;
+	doc.setFontSize(7.2);
+	doc.text('Office of The LGU Youth & Sports', pageWidth / 2, startY, { align: 'center' }); startY += 8;
+	doc.setFontSize(7.8);
+	doc.text('Summary of LGU Youth & Sports System', pageWidth / 2, startY, { align: 'center' }); startY += 10;
+
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(5.8);
+	const para = 'Section 5(b) of the Implementing Rules and Regulations (IRR) of RA No. 10742 states that the Katipunan ng Kabataan (KK) shall serve as the highest policymaking body to decide on matters affecting the youth in the barangay.';
+	const split = doc.splitTextToSize(para, pageWidth - 48);
+	doc.text(split, 24, startY);
+	startY += split.length * 6 + 5;
+
+	const headerColor = cssVarRgb('--pdf-header', [15, 37, 88]);
+	const rowColor = cssVarRgb('--pdf-row', [238, 242, 255]);
+	const firstColColor = cssVarRgb('--pdf-firstcol', [26, 58, 124]);
+	const borderColor = cssVarRgb('--pdf-border', [198, 208, 232]);
+	const totalColumnIndex = head.length - 1;
+
+	doc.autoTable({
+		startY,
+		head: [head],
+		body,
+		theme: 'grid',
+		margin: { left: 24, right: 24 },
+		tableWidth: 'auto',
+		headStyles: {
+			fillColor: headerColor,
+			textColor: 255,
+			halign: 'center',
+			fontStyle: 'bold',
+			lineColor: borderColor,
+			lineWidth: 0.25
+		},
+		styles: {
+			font: 'helvetica',
+			fontSize: 5.7,
+			cellPadding: { top: 2, right: 2, bottom: 2, left: 2 },
+			textColor: 38,
+			valign: 'middle',
+			lineColor: borderColor,
+			lineWidth: 0.25,
+			minCellHeight: 9
+		},
+		alternateRowStyles: { fillColor: rowColor },
+		columnStyles: {
+			0: { cellWidth: 142, halign: 'left' },
+			[totalColumnIndex]: { cellWidth: 42, halign: 'center' }
+		},
+		didParseCell: function (dataArg) {
+			const firstCell = String(dataArg.row.raw?.[0] || '').toUpperCase();
+			const isSectionRow = [
+				'SEX ASSIGNED BY BIRTH',
+				'CIVIL STATUS',
+				'EDUCATION',
+				'SPECIAL COUNTS'
+			].includes(firstCell);
+
+			if (dataArg.cell.section === 'body' && dataArg.column.index === 0) {
+				dataArg.cell.styles.fontStyle = 'bold';
+				dataArg.cell.styles.textColor = firstColColor;
+			}
+			if (dataArg.cell.section === 'body' && isSectionRow) {
+				dataArg.cell.styles.fillColor = [232, 238, 252];
+				dataArg.cell.styles.fontStyle = 'bold';
+				if (dataArg.column.index > 0) dataArg.cell.text = [''];
+			}
+		}
+	});
+
+	if (options.footerText || options.pageLabel) {
+		doc.setFont('helvetica', 'normal');
+		doc.setFontSize(6.5);
+		doc.setTextColor(95, 113, 153);
+		const footerParts = [options.footerText, options.pageLabel].filter(Boolean);
+		doc.text(footerParts.join(' | '), pageWidth / 2, pageHeight - 14, { align: 'center' });
+		doc.setTextColor(38);
+	}
+}
+
 function downloadBarangaySummaryPDF() {
 	if (!currentBarangayId) return alert('Open a barangay first');
 	fetchBarangaySummary(currentBarangayId).then(data => {
 		try {
-			const jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
-			if (!jsPDF) return alert('PDF library not loaded');
-
-			const { ageCols, rows: body } = buildSummaryRows(data);
-			const head = ['DEMOGRAPHICS', ...ageCols, 'TOTAL'];
+			const jsPDF = getSummaryPdfLibrary();
+			if (!jsPDF) return;
 
 			const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
 			if (typeof doc.autoTable !== 'function') return alert('jsPDF AutoTable plugin not loaded');
-			const pageWidth = doc.internal.pageSize.getWidth();
-			let startY = 40;
-
-			doc.setFontSize(10);
-			doc.text('Republic of the Philippines', pageWidth/2, startY, { align: 'center' }); startY += 14;
-			doc.text('Province of Bukidnon', pageWidth/2, startY, { align: 'center' }); startY += 14;
-			doc.text('Municipality of Manolo Fortich', pageWidth/2, startY, { align: 'center' }); startY += 28;
-			doc.setFontSize(16);
-			doc.text((data.barangay_name || 'BARANGAY').toUpperCase(), pageWidth/2, startY, { align: 'center' }); startY += 20;
-			doc.setFontSize(12);
-			doc.text('OFFICE OF THE SANGGUNIANG KABATAAN', pageWidth/2, startY, { align: 'center' }); startY += 16;
-			doc.setFontSize(13);
-			doc.text('SUMMARY OF KATIPUNAN NG KABATAAN (KK) PROFILING', pageWidth/2, startY, { align: 'center' }); startY += 18;
-
-			doc.setFontSize(9);
-			const para = 'Section 5(b) of the Implementing Rules and Regulations (IRR) of RA No. 10742 states that the Katipunan ng Kabataan (KK) shall serve as the highest policymaking body to decide on matters affecting the youth in the barangay.';
-			const split = doc.splitTextToSize(para, pageWidth - 80);
-			doc.text(split, 40, startY); startY += split.length * 10 + 6;
-
-			const headerColor = cssVarRgb('--pdf-header', [0,123,67]);
-			const rowColor = cssVarRgb('--pdf-row', [240,250,240]);
-			const firstColColor = cssVarRgb('--pdf-firstcol', [0,86,63]);
-			const borderColor = cssVarRgb('--pdf-border', [150,150,150]);
-
-			doc.autoTable({
-				startY: startY,
-				head: [head],
-				body: body,
-				theme: 'grid',
-				tableWidth: 'auto',
-				headStyles: {
-					fillColor: headerColor,
-					textColor: 255,
-					halign: 'center',
-					fontStyle: 'bold'
-				},
-				styles: {
-					fontSize: 9,
-					cellPadding: 4,
-					textColor: 50,
-					valign: 'middle'
-				},
-				alternateRowStyles: { fillColor: rowColor },
-				tableLineColor: borderColor,
-				tableLineWidth: 0.4,
-				columnStyles: {
-					0: { cellWidth: 140, halign: 'left' },
-					[head.length-1]: { cellWidth: 60, halign: 'center' }
-				},
-				didParseCell: function (dataArg) {
-					if (dataArg.cell.section === 'body' && dataArg.column.index === 0) {
-						dataArg.cell.styles.fontStyle = 'bold';
-						dataArg.cell.styles.textColor = firstColColor;
-					}
-					if (dataArg.cell.section === 'head') {
-						dataArg.cell.styles.cellPadding = 6;
-					}
-				}
-			});
+			drawBarangaySummaryPdfPage(doc, data);
 
 			const filename = `${(data.barangay_name || 'Barangay').replace(/\s+/g,'_')}_demographics_summary.pdf`;
 			doc.save(filename);
@@ -1153,6 +1195,57 @@ function downloadBarangaySummaryPDF() {
 			alert('Failed to generate PDF: ' + (err.message || err));
 		}
 	}).catch(err => alert(err.message));
+}
+
+async function downloadAllBarangaySummaryPDF() {
+	const button = document.querySelector('.btn-report-download');
+	const originalText = button ? button.innerHTML : '';
+	try {
+		if (!CURRENT_USER || !CURRENT_USER.is_admin) {
+			alert('Only the system admin can download the merged Manolo Fortich barangay report.');
+			return;
+		}
+
+		if (button) {
+			button.disabled = true;
+			button.innerHTML = 'Preparing PDF...';
+		}
+
+		const jsPDF = getSummaryPdfLibrary();
+		if (!jsPDF) return;
+
+		const barangayResponse = await fetch(`/api/barangays/all/?_=${Date.now()}`, { cache: 'no-store' });
+		if (!barangayResponse.ok) throw new Error('Failed to load the 22 barangays.');
+		const barangays = await barangayResponse.json();
+		if (!Array.isArray(barangays) || !barangays.length) throw new Error('No barangays are available for the report.');
+
+		const summaries = await Promise.all(barangays.map(async barangay => {
+			const summary = await fetchBarangaySummary(barangay.id);
+			return { ...summary, barangay_name: summary.barangay_name || barangay.name };
+		}));
+
+		const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+		if (typeof doc.autoTable !== 'function') return alert('jsPDF AutoTable plugin not loaded');
+
+		summaries.forEach((summary, index) => {
+			if (index > 0) doc.addPage('letter', 'landscape');
+			drawBarangaySummaryPdfPage(doc, summary, {
+				reportTitle: 'Manolo Fortich',
+				footerText: `Barangay ${summary.barangay_name}`,
+				pageLabel: `Report ${index + 1} of ${summaries.length}`
+			});
+		});
+
+		doc.save('Manolo_Fortich_22_Barangay_Profiling_Summary.pdf');
+	} catch (err) {
+		console.error('Merged PDF generation error:', err);
+		alert('Failed to generate merged PDF: ' + (err.message || err));
+	} finally {
+		if (button) {
+			button.disabled = false;
+			button.innerHTML = originalText;
+		}
+	}
 }
 
 window.downloadBlankYouthForm = function downloadBlankYouthForm() {
@@ -3395,6 +3488,7 @@ window.saveYouth = saveYouth;
 window.toggleOSY = toggleOSY;
 window.downloadBarangaySummaryCSV = downloadBarangaySummaryCSV;
 window.downloadBarangaySummaryPDF = downloadBarangaySummaryPDF;
+window.downloadAllBarangaySummaryPDF = downloadAllBarangaySummaryPDF;
 window.disableBarangayAccount = disableBarangayAccount;
 window.enableBarangayAccount = enableBarangayAccount;
 window.openAdminAccountModal = openAdminAccountModal;

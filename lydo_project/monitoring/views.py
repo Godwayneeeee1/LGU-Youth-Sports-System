@@ -2712,6 +2712,9 @@ def heatmap_api(request):
         ),
         'osy': Youth.objects.filter(is_osy=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
         'pwd': Youth.objects.filter(is_pwd=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
+        'working': Youth.objects.filter(is_working_youth=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
+        'ip': Youth.objects.filter(is_ip=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
+        'in_school': Youth.objects.filter(is_in_school=True, birthdate__isnull=False, barangay_id__in=allowed_ids),
     }
 
     metrics = {}
@@ -2726,7 +2729,7 @@ def heatmap_api(request):
     return JsonResponse({
         'ages': age_columns,
         'default_metric': 'unemployed',
-        'metric_order': ['unemployed', 'osy', 'pwd'],
+        'metric_order': ['unemployed', 'osy', 'pwd', 'working', 'ip', 'in_school'],
         'metrics': metrics,
     })
 
